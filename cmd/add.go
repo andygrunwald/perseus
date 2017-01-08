@@ -7,6 +7,8 @@ import (
 	"github.com/andygrunwald/perseus/perseus/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"log"
+	"os"
 )
 
 // addCmd represents the "add" command for the CLI interface.
@@ -67,11 +69,18 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}
 
+	// Initialize logger
+	// At the moment we run pretty standard golang logging to stderr
+	// It works for us. We might consider to change this later.
+	// If you have good reasons for this, feel free to talk to us.
+	l := log.New(os.Stderr, "", log.LstdFlags)
+
 	// Setup command and run it
 	c := &commands.AddCommand{
 		Package:          packet,
 		WithDependencies: withDepsFlag,
 		Config:           m,
+		Log:              l,
 	}
 	err = c.Run()
 	if err != nil {

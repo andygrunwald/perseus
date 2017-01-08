@@ -8,6 +8,7 @@ import (
 	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
+	"log"
 	"net/url"
 )
 
@@ -21,10 +22,13 @@ type AddCommand struct {
 	Package string
 	// Config is the main medusa configuration
 	Config *config.Medusa
+	// Log represents a logger to log messages
+	Log *log.Logger
 }
 
 // Run is the business logic of AddCommand.
 func (c *AddCommand) Run() error {
+	c.Log.Printf("Running Add command for package %s", c.Package)
 	p, err := perseus.NewPackage(c.Package)
 	if err != nil {
 		return err
@@ -40,7 +44,6 @@ func (c *AddCommand) Run() error {
 	if p.Repository == nil {
 
 		dependencies := []string{p.Name}
-
 		if c.WithDependencies {
 			fmt.Println("with deps")
 			packagistClient, err := packagist.New("https://packagist.org", nil)
