@@ -22,26 +22,4 @@ func (c *MirrorCommand) Run() error {
 	// TODO IMPLEMENT MirrorCommand
 
 	return nil
-	/*
-			fmt.Println("<info>First getting all dependencies</info>")
-			p, err := packagist.New("https://packagist.org", nil)
-			if err != nil {
-				panic(err)
-			}
-
-			repos := []string{}
-
-			/**
-			foreach ($config->repositories as $repository) {
-		            if (property_exists($repository, 'name')) {
-		                $repos[] = $repository->name;
-		            }
-		        }
-
-
-			for _, dependency := range viper.GetStringSlice("require") {
-				fmt.Printf(" - Getting dependencies for <info>%s</info>", dependency)
-
-			}
-	*/
 }

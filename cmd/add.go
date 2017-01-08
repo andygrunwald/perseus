@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/perseus/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -61,11 +62,16 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't determine \"with-deps\" flag: %s\n", err)
 	}
 
+	m, err := config.NewMedusa(viper.GetViper())
+	if err != nil {
+		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
+	}
+
 	// Setup command and run it
 	c := &commands.AddCommand{
 		Package:          packet,
 		WithDependencies: withDepsFlag,
-		Config:           viper.GetViper(),
+		Config:           m,
 	}
 	err = c.Run()
 	if err != nil {

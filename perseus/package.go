@@ -1,12 +1,16 @@
 package perseus
 
-import "errors"
+import (
+	"errors"
+	"net/url"
+)
 
 // Package represents a single package.
 // This can be seen as the main unit of perseus.
 type Package struct {
 	// Name is the name of the package (e.g. "twig/twig" or "symfony/console")
-	Name string
+	Name       string
+	Repository *url.URL
 }
 
 // NewPackage will create a new Package
