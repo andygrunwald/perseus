@@ -34,7 +34,7 @@ type downloadResult struct {
 
 // Run is the business logic of AddCommand.
 func (c *AddCommand) Run() error {
-	c.Log.Printf("Running Add command for package %s", c.Package)
+	c.Log.Printf("Running \"add\" command for package \"%s\"", c.Package)
 	p, err := perseus.NewPackage(c.Package)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (c *AddCommand) Run() error {
 		dependencies := []*perseus.Package{p}
 		if c.WithDependencies {
 			pUrl := "https://packagist.org"
-			c.Log.Printf("Loading dependencies for package %s from %s", c.Package, pUrl)
+			c.Log.Printf("Loading dependencies for package \"%s\" from %s", c.Package, pUrl)
 			packagistClient, err := packagist.New(pUrl, nil)
 			if err != nil {
 				return err
@@ -67,40 +67,20 @@ func (c *AddCommand) Run() error {
 			// 	And this works for now.
 			d := perseus.NewDependencyResolver(p.Name, packagistClient)
 			dependencies = d.Resolve()
+			c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), c.Package, pUrl)
 		}
 
+		// Download package incl. dependencies concurrent
 		dependencyCount := len(dependencies)
-		downloads := make(chan downloadResult, dependencyCount)
-
-		// Loop over all dependencies and download them concurrent
-		for _, packet := range dependencies {
-			c.Log.Printf("Start mirroring of package \"%s\"", packet.Name)
-
-			go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
-				err = c.downloadPackage(singlePacket)
-				if err != nil {
-					ch <- downloadResult{
-						Package: singlePacket.Name,
-						Error:   err,
-					}
-					return
-				}
-
-				// Successful result
-				ch <- downloadResult{
-					Package: singlePacket.Name,
-					Error:   nil,
-				}
-				// TODO updateSatisConfig(packet) per package
-			}(packet, downloads)
-		}
+		downloadsChan := make(chan downloadResult, dependencyCount)
+		c.startConcurrentDownloads(dependencies, downloadsChan)
 
 		// Check which dependencies where download successful and which not
-		c.processFinishedDownloads(downloads, dependencyCount)
-		close(downloads)
+		c.processFinishedDownloads(downloadsChan, dependencyCount)
+		close(downloadsChan)
 
 	} else {
-		c.Log.Printf("Start mirroring of package \"%s\" from repository %s", p.Name, p.Repository)
+		c.Log.Printf("Mirroring of package \"%s\" from repository \"%s\" started", p.Name, p.Repository)
 		// TODO: downloadPackage will write to p (name + Repository url), we should test this with a package that is deprecated.
 		// Afaik Packagist will forward you to the new one.
 		// Facebook SDK is one of those
@@ -108,15 +88,16 @@ func (c *AddCommand) Run() error {
 		if err != nil {
 			return err
 		}
+		c.Log.Printf("Mirroring of package \"%s\" successful", p.Name)
 
 		// TODO updateSatisConfig(packet)
 	}
 
 	// TODO Implement everything and remove this
-	fmt.Println("=============================")
-	fmt.Println("Add command runs successful. Fuck Yeah!")
-	fmt.Println("Important: This command is not complete yet. Write command of Satis configuration is missing.")
-	fmt.Println("=============================")
+	c.Log.Println("=============================")
+	c.Log.Println("Add command runs successful. Fuck Yeah!")
+	c.Log.Println("Important: This command is not complete yet. Write command of Satis configuration is missing.")
+	c.Log.Println("=============================")
 
 	return nil
 }
@@ -163,6 +144,31 @@ func (c *AddCommand) downloadPackage(p *perseus.Package) error {
 		return fmt.Errorf("Downloader client creation failed for package %s: %s", p.Name, err)
 	}
 	return downloadClient.Download(targetDir)
+}
+
+func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, downloadChan chan<- downloadResult) {
+	// Loop over all dependencies and download them concurrent
+	for _, packet := range dependencies {
+		c.Log.Printf("Mirroring of package \"%s\" started", packet.Name)
+
+		go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
+			err := c.downloadPackage(singlePacket)
+			if err != nil {
+				ch <- downloadResult{
+					Package: singlePacket.Name,
+					Error:   err,
+				}
+				return
+			}
+
+			// Successful result
+			ch <- downloadResult{
+				Package: singlePacket.Name,
+				Error:   nil,
+			}
+			// TODO updateSatisConfig(packet) per package
+		}(packet, downloadChan)
+	}
 }
 
 func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) {
