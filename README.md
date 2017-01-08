@@ -64,7 +64,14 @@ TODO
 
 ## Unit tests
 
-TODO
+A running go installation is required to execute unit tests.
+To execute them, run:
+
+```
+$ make test
+```
+
+Tip: If you plan to contribute via a Pull Request, the use of unit tests is encouraged.
 
 ## Project background
 
