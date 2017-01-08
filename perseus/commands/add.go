@@ -79,7 +79,6 @@ func (c *AddCommand) Run() error {
 			go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
 				err = c.downloadPackage(singlePacket)
 				if err != nil {
-					c.Log.Printf("In go routine #2: %s", singlePacket.Name)
 					ch <- downloadResult{
 						Package: singlePacket.Name,
 						Error:   err,
@@ -87,7 +86,6 @@ func (c *AddCommand) Run() error {
 					return
 				}
 
-				c.Log.Printf("In go routine #3: %s", singlePacket.Name)
 				// Successful result
 				ch <- downloadResult{
 					Package: singlePacket.Name,
@@ -173,7 +171,7 @@ func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependen
 		if download.Error == nil {
 			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
 		} else {
-			c.Log.Printf("Error while mirroring package \"%s\": %s", download.Error)
+			c.Log.Printf("Error while mirroring package \"%s\": %s", download.Package, download.Error)
 		}
 	}
 }
