@@ -109,7 +109,6 @@ func (c *AddCommand) downloadPackage(p *perseus.Package) error {
 
 	// Does targetDir already exist?
 	if _, err := os.Stat(targetDir); err != nil {
-		return err
 		if !os.IsNotExist(err) {
 			return err
 		}
