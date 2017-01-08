@@ -2,9 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"os"
 	"log"
 	"net/url"
+	"os"
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
@@ -174,7 +174,7 @@ func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, d
 }
 
 func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) {
-	for i:= 0; i < dependencyCount; i++ {
+	for i := 0; i < dependencyCount; i++ {
 		download := <-ch
 		if download.Error == nil {
 			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
