@@ -109,9 +109,12 @@ func (c *AddCommand) downloadPackage(p *perseus.Package) error {
 
 	// Does targetDir already exist?
 	if _, err := os.Stat(targetDir); err != nil {
-		if os.IsExist(err) {
-			return fmt.Errorf("The repository %s already exists in %s. Try updating it instead.", p.Name, targetDir)
+		return err
+		if !os.IsNotExist(err) {
+			return err
 		}
+	} else {
+		return os.ErrExist
 	}
 
 	if p.Repository == nil {
@@ -177,7 +180,11 @@ func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependen
 		if download.Error == nil {
 			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
 		} else {
-			c.Log.Printf("Error while mirroring package \"%s\": %s", download.Package, download.Error)
+			if os.IsExist(download.Error) {
+				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", download.Package)
+			} else {
+				c.Log.Printf("Error while mirroring package \"%s\": %s", download.Package, download.Error)
+			}
 		}
 	}
 }
