@@ -3,13 +3,13 @@ package commands
 import (
 	"fmt"
 	"os"
+	"log"
+	"net/url"
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
-	"log"
-	"net/url"
 )
 
 // AddCommand reflects the business logic and the Command interface to add a new package.
@@ -24,6 +24,12 @@ type AddCommand struct {
 	Config *config.Medusa
 	// Log represents a logger to log messages
 	Log *log.Logger
+}
+
+// downloadResult represents the result of a download
+type downloadResult struct {
+	Package string
+	Error   error
 }
 
 // Run is the business logic of AddCommand.
@@ -43,10 +49,11 @@ func (c *AddCommand) Run() error {
 	p.Repository, _ = c.Config.GetRepositoryURLOfPackage(p)
 	if p.Repository == nil {
 
-		dependencies := []string{p.Name}
+		dependencies := []*perseus.Package{p}
 		if c.WithDependencies {
-			fmt.Println("with deps")
-			packagistClient, err := packagist.New("https://packagist.org", nil)
+			pUrl := "https://packagist.org"
+			c.Log.Printf("Loading dependencies for package %s from %s", c.Package, pUrl)
+			packagistClient, err := packagist.New(pUrl, nil)
 			if err != nil {
 				return err
 			}
@@ -62,25 +69,40 @@ func (c *AddCommand) Run() error {
 			dependencies = d.Resolve()
 		}
 
+		dependencyCount := len(dependencies)
+		downloads := make(chan downloadResult, dependencyCount)
+
+		// Loop over all dependencies and download them concurrent
 		for _, packet := range dependencies {
-			// TODO: Add some kind of logging here: fmt.Printf(" - Mirroring <info>%s</info>\n", singlePacket)
+			c.Log.Printf("Start mirroring of package \"%s\"", packet.Name)
 
-			// TODO: Make this concurrent
-			packetEntity, err := perseus.NewPackage(packet)
-			if err != nil {
-				return err
-			}
+			go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
+				err = c.downloadPackage(singlePacket)
+				if err != nil {
+					c.Log.Printf("In go routine #2: %s", singlePacket.Name)
+					ch <- downloadResult{
+						Package: singlePacket.Name,
+						Error:   err,
+					}
+					return
+				}
 
-			err = c.downloadPackage(packetEntity)
-			if err != nil {
-				return err
-			}
-
-			// TODO updateSatisConfig(packet) per package
+				c.Log.Printf("In go routine #3: %s", singlePacket.Name)
+				// Successful result
+				ch <- downloadResult{
+					Package: singlePacket.Name,
+					Error:   nil,
+				}
+				// TODO updateSatisConfig(packet) per package
+			}(packet, downloads)
 		}
 
+		// Check which dependencies where download successful and which not
+		c.processFinishedDownloads(downloads, dependencyCount)
+		close(downloads)
+
 	} else {
-		// TODO: Add some kind of logging here: fmt.Printf(" - Mirroring <info>%s</info>\n", packet)
+		c.Log.Printf("Start mirroring of package \"%s\" from repository %s", p.Name, p.Repository)
 		// TODO: downloadPackage will write to p (name + Repository url), we should test this with a package that is deprecated.
 		// Afaik Packagist will forward you to the new one.
 		// Facebook SDK is one of those
@@ -143,4 +165,15 @@ func (c *AddCommand) downloadPackage(p *perseus.Package) error {
 		return fmt.Errorf("Downloader client creation failed for package %s: %s", p.Name, err)
 	}
 	return downloadClient.Download(targetDir)
+}
+
+func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) {
+	for i:= 0; i < dependencyCount; i++ {
+		download := <-ch
+		if download.Error == nil {
+			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
+		} else {
+			c.Log.Printf("Error while mirroring package \"%s\": %s", download.Error)
+		}
+	}
 }

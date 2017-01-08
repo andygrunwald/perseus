@@ -7,7 +7,7 @@ import (
 )
 
 type DependencyResolver interface {
-	Resolve() []string
+	Resolve() []*Package
 }
 
 // DependencyResolver reflects the main structure of an Dependency Resolver :)
@@ -30,7 +30,7 @@ func NewDependencyResolver(packet string, p *packagist.Client) DependencyResolve
 	return d
 }
 
-func (d *PackagistDependencyResolver) Resolve() []string {
+func (d *PackagistDependencyResolver) Resolve() []*Package {
 	// TODO This method can be speed up by using maps instead of the stringInSlice lookup
 
 	// TODO This can be speed up by concurrency, but i don`t know if it is worth the effort + complexity
@@ -44,7 +44,7 @@ func (d *PackagistDependencyResolver) Resolve() []string {
 	//	I like the idea of the result struct. But all of them forget to close the channel
 
 	deps := []string{d.Package}
-	resolved := []string{}
+	resolved := []*Package{}
 	var packet string
 
 	for len(deps) > 0 {
@@ -89,17 +89,27 @@ func (d *PackagistDependencyResolver) Resolve() []string {
 			}
 
 			for dependency, _ := range version.Require {
-				if !stringInSlice(dependency, resolved) && !stringInSlice(dependency, deps) {
+				if !stringInPacketlist(dependency, resolved) && !stringInSlice(dependency, deps) {
 					deps = append(deps, dependency)
 					// $deps = array_unique($deps);
 				}
 			}
 		}
 
-		resolved = append(resolved, p.Name)
+		resolvedPackage, err := NewPackage(p.Name)
+		resolved = append(resolved, resolvedPackage)
 	}
 
 	return resolved
+}
+
+func stringInPacketlist(a string, list []*Package) bool {
+	for _, b := range list {
+		if b.Name == a {
+			return true
+		}
+	}
+	return false
 }
 
 func stringInSlice(a string, list []string) bool {
