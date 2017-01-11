@@ -27,7 +27,10 @@ func (d *GitDownloader) Download(target string) error {
 		return fmt.Errorf("Error during cmd \"%+v\". stdOut: %s", cmd.Args, stdOut)
 	}
 
-	// TODO Do we need this? Medusa implemented this, but i don't know why yet
+	// Lets be save and fire a update-server-info
+	// This is useful if the remote server don`t support on-the-fly pack generations.
+	// See `git help update-server-info`
+	// See https://github.com/instaclick/medusa/commit/ff4270f56afacf0a788b8b192e76180fbe32452e#diff-74b630cd9501803fdde532d1e2128e2f
 	cmd = exec.Command("git", "update-server-info", "-f")
 	cmd.Dir = target
 	stdOut, err = cmd.Output()
@@ -38,7 +41,9 @@ func (d *GitDownloader) Download(target string) error {
 		return fmt.Errorf("Error during cmd \"%+v\". stdOut: %s", cmd.Args, stdOut)
 	}
 
-	// TODO Lets have a deeper look what it does, what it means, and why this was implemented at all by Medusa
+	// Firing a git file system check.
+	// This was originally introduced, because on of the KDE git mirrors has problems.
+	// See https://github.com/instaclick/medusa/issues/6
 	cmd = exec.Command("git", "fsck")
 	cmd.Dir = target
 	stdOut, err = cmd.Output()
