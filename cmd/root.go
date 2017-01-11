@@ -22,7 +22,7 @@ To save development time, external packages will be used to focus on your busine
 Most external packages are downloaded from Packagist, Github or other places every time you hit composer install or update.
 To speed up your development workflow, minimize network traffic and being independent from other 3rd party services for building and deploying your apps, a local mirror in your office make sense.
 
-perseus will create a mirror of all your project dependencies let you fetch everything from there rather than fetching the whole source from the internet (e.g. Github or Packagist).
+perseus will create a mirror of all your project dependencies and lets you fetch everything from there rather than fetching the whole source from the internet (e.g. Github or Packagist).
 Each dependency is entirely mirrored, meaning you'll have all versions, tags, and branches on your local machine or server.`,
 }
 

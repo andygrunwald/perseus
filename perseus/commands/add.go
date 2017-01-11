@@ -62,7 +62,7 @@ func (c *AddCommand) Run() error {
 			//	Why? Easy. If an API request fails, we don't know it.
 			//	Why? Easy. Which packages will be skipped? e.g. "php" ?
 			//	We really have to refactor this. Checkout the articles / links
-			//	That are mentioned IN the depdency resolver comments
+			//	That are mentioned IN the dependency resolver comments
 			//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
 			// 	And this works for now.
 			d := perseus.NewDependencyResolver(p.Name, packagistClient)
@@ -72,12 +72,13 @@ func (c *AddCommand) Run() error {
 
 		// Download package incl. dependencies concurrent
 		dependencyCount := len(dependencies)
+		// TODO CHeck: Make it a difference to put a buffer in it vs. no buffer at all? Ask gopher channel!
 		downloadsChan := make(chan downloadResult, dependencyCount)
+		defer close(downloadsChan)
 		c.startConcurrentDownloads(dependencies, downloadsChan)
 
 		// Check which dependencies where download successful and which not
 		c.processFinishedDownloads(downloadsChan, dependencyCount)
-		close(downloadsChan)
 
 	} else {
 		c.Log.Printf("Mirroring of package \"%s\" from repository \"%s\" started", p.Name, p.Repository)
@@ -155,18 +156,9 @@ func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, d
 
 		go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
 			err := c.downloadPackage(singlePacket)
-			if err != nil {
-				ch <- downloadResult{
-					Package: singlePacket.Name,
-					Error:   err,
-				}
-				return
-			}
-
-			// Successful result
 			ch <- downloadResult{
 				Package: singlePacket.Name,
-				Error:   nil,
+				Error:   err,
 			}
 			// TODO updateSatisConfig(packet) per package
 		}(packet, downloadChan)

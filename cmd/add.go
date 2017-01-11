@@ -39,7 +39,7 @@ func init() {
 	addCmd.Flags().Bool("with-deps", false, "If set, the package dependencies will be downloaded, too")
 
 	// Cobra is only able to define flags, but no arguments
-	// If we are able to define arguments we would implement those:
+	// If we were able to define arguments we would implement those:
 	//
 	// 	new InputArgument('package', InputArgument::REQUIRED, 'The name of a composer package', null),
 	// 	new InputArgument('config', InputArgument::OPTIONAL, 'A config file', 'medusa.json')

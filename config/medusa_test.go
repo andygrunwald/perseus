@@ -36,9 +36,9 @@ func TestMedusa_GetRepositoryURLOfPackage_FaultyRepositories(t *testing.T) {
 	}{
 		// No "repositories" configured at all
 		{"symfony/console", &EmptyUnitTestProvider{}},
-		// Repositories confgured, but not this one
+		// Repositories configured, but not this one
 		{"twig/twig", &MedusaUnitTestProvider{}},
-		// Repositories configured, plus this one, but don't has an url key
+		// Repositories configured, plus this one, but doesn't have an url key
 		{"no/url", &MedusaUnitTestProvider{}},
 		// Repositories configured, plus this one, but has an empty url key
 		{"empty/url", &MedusaUnitTestProvider{}},
