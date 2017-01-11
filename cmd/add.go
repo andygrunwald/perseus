@@ -75,6 +75,7 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	// If you have good reasons for this, feel free to talk to us.
 	l := log.New(os.Stderr, "", log.LstdFlags)
 
+	l.Printf("Running \"add\" command for package \"%s\"", packet)
 	// Setup command and run it
 	c := &commands.AddCommand{
 		Package:          packet,

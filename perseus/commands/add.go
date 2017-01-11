@@ -34,7 +34,6 @@ type downloadResult struct {
 
 // Run is the business logic of AddCommand.
 func (c *AddCommand) Run() error {
-	c.Log.Printf("Running \"add\" command for package \"%s\"", c.Package)
 	p, err := perseus.NewPackage(c.Package)
 	if err != nil {
 		return err
