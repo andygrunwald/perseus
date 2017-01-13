@@ -29,7 +29,6 @@ But it has its limitations, flaws and disadvantages like:
 * Concurrency and usage of multiple threads for faster mirror/update runs
 * Serious error handling
 * Reporting of faulty packages or packages that can't be processed
-* REST-API to add, remove or update packages (incl. [API Blueprint specification](./api-blueprint.apib))
 * [Monitoring HTTP-Endpoint](#monitoring)
 
 ## Installation
@@ -41,10 +40,6 @@ TODO
 TODO
 
 ## Configuration
-
-TODO
-
-## REST-API
 
 TODO
 
