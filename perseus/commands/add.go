@@ -91,9 +91,14 @@ func (c *AddCommand) Run() error {
 		// Facebook SDK is one of those
 		err := c.downloadPackage(p)
 		if err != nil {
-			return err
+			if os.IsExist(err) {
+				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", p.Name)
+			} else {
+				return err
+			}
+		} else {
+			c.Log.Printf("Mirroring of package \"%s\" successful", p.Name)
 		}
-		c.Log.Printf("Mirroring of package \"%s\" successful", p.Name)
 
 		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(p.Name))
 		// TODO updateSatisConfig(packet)
