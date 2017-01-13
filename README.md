@@ -99,9 +99,9 @@ And in the end: **We did it.** And it works out. Challenges keep us motivated!
 
 ## Credits
 
-The perseus logo was created by @mre.  
+The perseus logo was created by [@mre](https://github.com/mre).  
 The original Gopher was designed by [Renee French](http://reneefrench.blogspot.com/).  
-Go Gopher vector illustration by [Hugo Arganda](http://about.me/argandas) (@argandas)
-Hosted at the [gopher-vector repository](https://github.com/golang-samples/gopher-vector).
-The Medusa vector art was adjusted from [Amanda Downs](https://thenounproject.com/search/?q=medusa&i=22849) work from the Noun Project.
+Go Gopher vector illustration by [Hugo Arganda](http://about.me/argandas) ([@argandas](https://github.com/argandas))  
+Hosted at the [gopher-vector repository](https://github.com/golang-samples/gopher-vector).  
+The Medusa vector art was adjusted from [Amanda Downs](https://thenounproject.com/search/?q=medusa&i=22849) work from the Noun Project.  
 The perseus font is called [Dalek](http://www.dafont.com/de/dalek.font) created by [K-Type](http://www.k-type.com/).
