@@ -21,6 +21,11 @@ func (p *ViperProvider) Get(key string) interface{} {
 	return p.v.Get(key)
 }
 
+// GetStringSlice returns the value associated with the key as a slice of strings.
+func (p *ViperProvider) GetStringSlice(key string) []string {
+	return p.v.GetStringSlice(key)
+}
+
 // GetContentMap returns the complete content of the provider data source as a map
 func (p *ViperProvider) GetContentMap() map[string]interface{} {
 	// TODO Implement

@@ -64,6 +64,34 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	return nil, fmt.Errorf("No repository url found for package %s", p.Name)
 }
 
+func (m *Medusa) GetNamesOfRepositories() ([]string, error) {
+	repositories := m.config.Get("repositories")
+	if repositories == nil {
+		// TODO Define own error type and handle it in mirror command
+		return nil, errors.New("No repositories configured.")
+	}
+
+	repositoriesSlice := repositories.([]interface{})
+	if len(repositoriesSlice) == 0 {
+		// TODO Define own error type and handle it in mirror command
+		return nil, errors.New("No repositories configured.")
+	}
+
+	r := make([]string, 0, len(repositoriesSlice))
+	for _, repoEntry := range repositoriesSlice {
+		repoEntryMap := repoEntry.(map[string]interface{})
+		if val, ok := repoEntryMap["name"]; ok {
+			r = append(r, val.(string))
+		}
+	}
+
+	return r, nil
+}
+
+func (m *Medusa) GetRequire() []string {
+	return m.config.GetStringSlice("require")
+}
+
 // GetString returns key from the Medusa configuration as a casted String
 func (m *Medusa) GetString(key string) string {
 	return m.config.GetString(key)

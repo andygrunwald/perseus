@@ -91,7 +91,7 @@ func (c *Client) GetPackage(name string) (*Package, *http.Response, error) {
 	// Check the status codes
 	// // TODO What happens if Packagist rewrite the package? Which return code we get? 300 something? Or is the redirect handled by the http client? E.g. the facebook example? We should output here both names
 	if c := resp.StatusCode; c < 200 || c > 299 {
-		return nil, resp, fmt.Errorf("Expected a return code within 2xx. Got %d", c)
+		return nil, resp, fmt.Errorf("Expected a return code within 2xx for package \"%s\". Got %d", name, c)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)

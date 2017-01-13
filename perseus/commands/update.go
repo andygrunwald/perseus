@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/andygrunwald/perseus/config"
+	"github.com/andygrunwald/perseus/downloader"
 	"log"
 	"path/filepath"
-	"github.com/andygrunwald/perseus/downloader"
 )
 
 // UpdateCommand reflects the business logic and the Command interface to update all packages that were added or mirrored in the past.

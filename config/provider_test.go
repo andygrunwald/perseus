@@ -11,6 +11,10 @@ func (p *EmptyUnitTestProvider) GetString(key string) string {
 	return ""
 }
 
+func (p *EmptyUnitTestProvider) GetStringSlice(key string) []string {
+	return []string{}
+}
+
 func (p *EmptyUnitTestProvider) GetContentMap() map[string]interface{} {
 	return map[string]interface{}{}
 }
@@ -59,6 +63,18 @@ func (p *MedusaUnitTestProvider) GetString(key string) string {
 		s = "/var/perseus/git-mirror"
 	}
 
+	return s
+}
+
+func (p *MedusaUnitTestProvider) GetStringSlice(key string) []string {
+	var s []string
+	if key == "require" {
+		s = []string{
+			"symfony/symfony",
+			"monolog/monolog",
+			"swiftmailer/swiftmailer",
+		}
+	}
 	return s
 }
 

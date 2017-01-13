@@ -10,6 +10,8 @@ type Provider interface {
 	Get(key string) interface{}
 	// GetString returns key from the configuration as a casted String
 	GetString(key string) string
+	// GetStringSlice returns the value associated with the key as a slice of strings.
+	GetStringSlice(key string) []string
 	// GetContentMap returns the complete content of the provider data source as a map
 	GetContentMap() map[string]interface{}
 }

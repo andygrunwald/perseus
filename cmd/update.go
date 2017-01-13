@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/perseus/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/andygrunwald/perseus/config"
 	"log"
 	"os"
 )
@@ -70,8 +70,8 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	l.Println("Running \"update\" command")
 	// Setup command and run it
 	c := &commands.UpdateCommand{
-		Config:           m,
-		Log:              l,
+		Config: m,
+		Log:    l,
 	}
 	err = c.Run()
 	if err != nil {

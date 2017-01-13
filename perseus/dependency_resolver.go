@@ -71,6 +71,23 @@ func (d *PackagistDependencyResolver) Resolve() []*Package {
 			continue
 		}
 
+		// Overwrite a package here
+		// TODO Fix this dirty hack here. Medusa does it exactly like this.
+		// We overwrite packages, because they are added as dependencies to some
+		// Maybe we should just skip it
+		if packet == "symfony/translator" {
+			packet = "symfony/translation"
+		}
+		if packet == "symfony/doctrine-bundle" {
+			packet = "doctrine/doctrine-bundle"
+		}
+		if packet == "metadata/metadata" {
+			packet = "jms/metadata"
+		}
+		if packet == "zendframework/zend-registry" {
+			packet = "zf1/zend-registry"
+		}
+
 		p, _, err := d.Packagist.GetPackage(packet)
 		if err != nil {
 			// TODO What to do when we have an api call error here? fix it

@@ -71,6 +71,7 @@ func (c *AddCommand) Run() error {
 			// 	And this works for now.
 			d := perseus.NewDependencyResolver(p.Name, packagistClient)
 			dependencies = d.Resolve()
+			// TODO List all deps here instead of the number
 			c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), c.Package, pUrl)
 		}
 
