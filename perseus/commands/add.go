@@ -101,7 +101,6 @@ func (c *AddCommand) Run() error {
 		}
 
 		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(p.Name))
-		// TODO updateSatisConfig(packet)
 	}
 
 	// Write Satis file
@@ -211,7 +210,6 @@ func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, d
 				Package: singlePacket.Name,
 				Error:   err,
 			}
-			// TODO updateSatisConfig(packet) per package
 		}(packet, downloadChan)
 	}
 }
