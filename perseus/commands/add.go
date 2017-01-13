@@ -2,9 +2,12 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
@@ -39,6 +42,8 @@ func (c *AddCommand) Run() error {
 		return err
 	}
 
+	var satisRepositories []string
+
 	// We don't respect the error here.
 	// OH: "WTF? Why? You claim 'Serious error handling' in the README!"
 	// Yep, you are right. And we still do.
@@ -71,13 +76,13 @@ func (c *AddCommand) Run() error {
 
 		// Download package incl. dependencies concurrent
 		dependencyCount := len(dependencies)
-		// TODO CHeck: Make it a difference to put a buffer in it vs. no buffer at all? Ask gopher channel!
+		// TODO Check: Make it a difference to put a buffer in it vs. no buffer at all? Ask gopher channel!
 		downloadsChan := make(chan downloadResult, dependencyCount)
 		defer close(downloadsChan)
 		c.startConcurrentDownloads(dependencies, downloadsChan)
 
 		// Check which dependencies where download successful and which not
-		c.processFinishedDownloads(downloadsChan, dependencyCount)
+		satisRepositories = c.processFinishedDownloads(downloadsChan, dependencyCount)
 
 	} else {
 		c.Log.Printf("Mirroring of package \"%s\" from repository \"%s\" started", p.Name, p.Repository)
@@ -90,16 +95,58 @@ func (c *AddCommand) Run() error {
 		}
 		c.Log.Printf("Mirroring of package \"%s\" successful", p.Name)
 
+		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(p.Name))
 		// TODO updateSatisConfig(packet)
 	}
 
-	// TODO Implement everything and remove this
-	c.Log.Println("=============================")
-	c.Log.Println("Add command runs successful. Fuck Yeah!")
-	c.Log.Println("Important: This command is not complete yet. Write command of Satis configuration is missing.")
-	c.Log.Println("=============================")
+	// Write Satis file
+	satisConfig := c.Config.GetString("satisconfig")
+	if len(satisConfig) == 0 {
+		c.Log.Print("No Satis configuration specified. Skipping to write a satis configuration.")
+		return nil
+	}
+
+	satisContent, err := ioutil.ReadFile(satisConfig)
+	if err != nil {
+		return fmt.Errorf("Can't read Satis configuration %s: %s", satisConfig, err)
+	}
+
+	j, err := config.NewJSONProvider(satisContent)
+	if err != nil {
+		return fmt.Errorf("Error while creating JSONProvider: %s", err)
+	}
+
+	s, err := config.NewSatis(j)
+	if err != nil {
+		return fmt.Errorf("Error while creating Satis object: %s", err)
+	}
+
+	s.AddRepositories(satisRepositories...)
+	err = s.WriteFile(satisConfig, 0644)
+	if err != nil {
+		return fmt.Errorf("Writing Satis configuration to %s failed: %s", satisConfig, err)
+	}
+
+	c.Log.Printf("Satis configuration successful written to %s", satisConfig)
 
 	return nil
+}
+
+func (c *AddCommand) getLocalUrlForRepository(p string) string {
+	var r string
+
+	satisURL := c.Config.GetString("satisurl")
+	repoDir := c.Config.GetString("repodir")
+
+	if len(satisURL) > 0 {
+		r = fmt.Sprintf("%s/%s.git", satisURL, p)
+	} else {
+		t := fmt.Sprintf("%s/%s.git", repoDir, p)
+		t = strings.TrimLeft(filepath.Clean(t), "/")
+		r = fmt.Sprintf("file:///%s", t)
+	}
+
+	return r
 }
 
 func (c *AddCommand) downloadPackage(p *perseus.Package) error {
@@ -164,11 +211,13 @@ func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, d
 	}
 }
 
-func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) {
+func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) []string {
+	var success []string
 	for i := 0; i < dependencyCount; i++ {
 		download := <-ch
 		if download.Error == nil {
 			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
+			success = append(success, c.getLocalUrlForRepository(download.Package))
 		} else {
 			if os.IsExist(download.Error) {
 				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", download.Package)
@@ -177,4 +226,6 @@ func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependen
 			}
 		}
 	}
+
+	return success
 }

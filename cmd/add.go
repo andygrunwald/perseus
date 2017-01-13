@@ -64,7 +64,13 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't determine \"with-deps\" flag: %s\n", err)
 	}
 
-	m, err := config.NewMedusa(viper.GetViper())
+	// Create viper based configuration provider for Medusa
+	p, err := config.NewViperProvider(viper.GetViper())
+	if err != nil {
+		return fmt.Errorf("Couldn't create a viper configuration provider: %s\n", err)
+	}
+
+	m, err := config.NewMedusa(p)
 	if err != nil {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}

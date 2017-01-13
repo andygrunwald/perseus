@@ -9,7 +9,7 @@ import (
 
 // Medusa reflects the original Medusa configuration file.
 type Medusa struct {
-	// config is the viper configuration object that has read the medusa configuration file
+	// config is the configuration provider object that has read the medusa configuration file
 	config Provider
 }
 
@@ -17,7 +17,7 @@ type Medusa struct {
 // If no configuration is given, an error will be returned.
 func NewMedusa(c Provider) (*Medusa, error) {
 	if c == nil {
-		return nil, errors.New("No Viper configuration applied")
+		return nil, errors.New("No conifguration provider applied")
 	}
 
 	m := &Medusa{

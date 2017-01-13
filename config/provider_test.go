@@ -11,6 +11,10 @@ func (p *EmptyUnitTestProvider) GetString(key string) string {
 	return ""
 }
 
+func (p *EmptyUnitTestProvider) GetContentMap() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 // MedusaUnitTestProvider represents a Provider implementation to return medusa settings for unit testing.
 type MedusaUnitTestProvider struct{}
 
@@ -56,4 +60,12 @@ func (p *MedusaUnitTestProvider) GetString(key string) string {
 	}
 
 	return s
+}
+
+func (p *MedusaUnitTestProvider) GetContentMap() map[string]interface{} {
+	m := map[string]interface{}{
+		"require": 2,
+	}
+
+	return m
 }
