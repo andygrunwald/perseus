@@ -6,6 +6,9 @@ import (
 	"github.com/andygrunwald/perseus/perseus/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/andygrunwald/perseus/config"
+	"log"
+	"os"
 )
 
 // updateCmd represents the "update" command for the CLI interface.
@@ -47,11 +50,30 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	// TODO If the first argument is given, it is the configuration file.
 	// This file needs to be read in and used for further operations
 
+	// Create viper based configuration provider for Medusa
+	p, err := config.NewViperProvider(viper.GetViper())
+	if err != nil {
+		return fmt.Errorf("Couldn't create a viper configuration provider: %s\n", err)
+	}
+
+	m, err := config.NewMedusa(p)
+	if err != nil {
+		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
+	}
+
+	// Initialize logger
+	// At the moment we run pretty standard golang logging to stderr
+	// It works for us. We might consider to change this later.
+	// If you have good reasons for this, feel free to talk to us.
+	l := log.New(os.Stderr, "", log.LstdFlags)
+
+	l.Println("Running \"update\" command")
 	// Setup command and run it
 	c := &commands.UpdateCommand{
-		Config: viper.GetViper(),
+		Config:           m,
+		Log:              l,
 	}
-	err := c.Run()
+	err = c.Run()
 	if err != nil {
 		return fmt.Errorf("Error during execution of \"update\" command: %s\n", err)
 	}

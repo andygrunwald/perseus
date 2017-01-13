@@ -21,3 +21,8 @@ func NewGit(repositoryUrl string) (Downloader, error) {
 	}
 	return client, nil
 }
+
+func NewGitUpdater() (Updater, error) {
+	client := &GitDownloader{}
+	return client, nil
+}
