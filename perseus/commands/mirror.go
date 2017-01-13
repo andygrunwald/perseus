@@ -2,16 +2,18 @@ package commands
 
 import (
 	"fmt"
-
-	"github.com/spf13/viper"
+	"github.com/andygrunwald/perseus/config"
+	"log"
 )
 
 // MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
 // This command is independent from an human interface (CLI, HTTP, etc.)
 // The human interfaces will interact with this command.
 type MirrorCommand struct {
-	// Config is the main configuration
-	Config *viper.Viper
+	// Config is the main medusa configuration
+	Config *config.Medusa
+	// Log represents a logger to log messages
+	Log *log.Logger
 }
 
 // Run is the business logic of MirrorCommand.
