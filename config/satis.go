@@ -71,7 +71,15 @@ func (s *Satis) AddRepositories(u ...string) {
 	}
 }
 
+
 func (s *Satis) WriteFile(filename string, perm os.FileMode) error {
+
+	// We maintain the Satis configuration file on our own.
+	// This is not managed by viper.
+	// Maybe it make sense to switch this in feature.
+	// Viper is not able to write configuration files (yet).
+	// A PR is available for this. See https://github.com/spf13/viper/pull/287
+
 	contentMap := s.config.GetContentMap()
 	m := make(map[string]*json.RawMessage, len(contentMap))
 	for k, v := range contentMap {
