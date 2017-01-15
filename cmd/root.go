@@ -57,9 +57,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	// If an error happen, quit.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
+	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Configuration file is missing and required.")
 		fmt.Println("Please checkout https://github.com/andygrunwald/perseus#configuration for further details.")
 		os.Exit(1)

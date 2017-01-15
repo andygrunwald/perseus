@@ -41,10 +41,27 @@ func init() {
 	// See https://github.com/spf13/cobra/issues/378 for details.
 }
 
-// cmdMirrorRun is the CLI interface for the "mirror" comment
+// cmdMirrorRun is the CLI interface for the "mirror" command
 func cmdMirrorRun(cmd *cobra.Command, args []string) error {
-	// TODO If the first argument is given, it is the configuration file.
-	// This file needs to be read in and used for further operations
+	// Initialize logger
+	// At the moment we run pretty standard golang logging to stderr
+	// It works for us. We might consider to change this later.
+	// If you have good reasons for this, feel free to talk to us.
+	l := log.New(os.Stderr, "", log.LstdFlags)
+
+	// Check if we got minimum 1 argument.
+	// We will only use the first argument here. The rest will be ignored.
+	// First argument is the configuration file, but it is optional.
+	// When this is set, we have to overwrite the configuration that viper found before
+	if len(args) >= 1 {
+		configFileArg := args[0]
+		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
+			return fmt.Errorf("Configuration file %s applied as a configuration file, but don't exists", configFileArg)
+		}
+		viper.SetConfigFile(configFileArg)
+	}
+	l.Printf("Using configuration file %s", viper.ConfigFileUsed())
+
 	// Create viper based configuration provider for Medusa
 	p, err := config.NewViperProvider(viper.GetViper())
 	if err != nil {
@@ -55,12 +72,6 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}
-
-	// Initialize logger
-	// At the moment we run pretty standard golang logging to stderr
-	// It works for us. We might consider to change this later.
-	// If you have good reasons for this, feel free to talk to us.
-	l := log.New(os.Stderr, "", log.LstdFlags)
 
 	l.Println("Running \"mirror\" command")
 	// Setup command and run it

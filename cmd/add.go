@@ -47,7 +47,7 @@ func init() {
 	// See https://github.com/spf13/cobra/issues/378 for details.
 }
 
-// cmdAddRun is the CLI interface for the "add" comment
+// cmdAddRun is the CLI interface for the "add" command
 func cmdAddRun(cmd *cobra.Command, args []string) error {
 	// Check first argument: package
 	if len(args) == 0 {
@@ -55,8 +55,24 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	}
 	packet := args[0]
 
-	// TODO If the second argument is given, it is the configuration file.
-	// This file needs to be read in and used for further operations
+	// Initialize logger
+	// At the moment we run pretty standard golang logging to stderr
+	// It works for us. We might consider to change this later.
+	// If you have good reasons for this, feel free to talk to us.
+	l := log.New(os.Stderr, "", log.LstdFlags)
+
+	// Check if we got minimum 2 arguments.
+	// We will only use the second argument here. The rest will be ignored.
+	// Second argument is the configuration file, but it is optional.
+	// When this is set, we have to overwrite the configuration that viper found before
+	if len(args) >= 2 {
+		configFileArg := args[1]
+		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
+			return fmt.Errorf("Configuration file %s applied as a configuration file, but don't exists", configFileArg)
+		}
+		viper.SetConfigFile(configFileArg)
+	}
+	l.Printf("Using configuration file %s", viper.ConfigFileUsed())
 
 	// Check "with-deps" flag
 	withDepsFlag, err := cmd.Flags().GetBool("with-deps")
@@ -74,12 +90,6 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}
-
-	// Initialize logger
-	// At the moment we run pretty standard golang logging to stderr
-	// It works for us. We might consider to change this later.
-	// If you have good reasons for this, feel free to talk to us.
-	l := log.New(os.Stderr, "", log.LstdFlags)
 
 	l.Printf("Running \"add\" command for package \"%s\"", packet)
 	// Setup command and run it
