@@ -71,7 +71,6 @@ func (s *Satis) AddRepositories(u ...string) {
 	}
 }
 
-
 func (s *Satis) WriteFile(filename string, perm os.FileMode) error {
 
 	// We maintain the Satis configuration file on our own.

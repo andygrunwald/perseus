@@ -1,10 +1,10 @@
 package perseus
 
 import (
-	"strings"
-	"sync"
 	"fmt"
 	"log"
+	"strings"
+	"sync"
 
 	"github.com/andygrunwald/perseus/packagist"
 )
@@ -24,7 +24,7 @@ type PackagistDependencyResolver struct {
 	Queued    []string
 
 	// Package contains the package name like "twig/twig" or "symfony/console"
-	Package   string
+	Package string
 
 	// Packagist is a Client to talk to a packagist instance
 	Packagist *packagist.Client
@@ -32,17 +32,17 @@ type PackagistDependencyResolver struct {
 
 type ResolverResult struct {
 	Package *Package
-	Error error
+	Error   error
 }
 
 func NewDependencyResolver(packet string, worker int, p *packagist.Client) DependencyResolver {
 	d := &PackagistDependencyResolver{
 		NumWorker: worker,
 		WaitGroup: sync.WaitGroup{},
-		lock: sync.RWMutex{},
-		Jobs: make(chan *Package, 4),
-		results: make(chan *ResolverResult),
-		Resolved: []string{},
+		lock:      sync.RWMutex{},
+		Jobs:      make(chan *Package, 4),
+		results:   make(chan *ResolverResult),
+		Resolved:  []string{},
 		Package:   packet,
 		Packagist: p,
 	}
@@ -105,7 +105,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 			// TODO Maybe a little bit more information? Return code?
 			r := &ResolverResult{
 				Package: j,
-				Error: err,
+				Error:   err,
 			}
 			results <- r
 			d.WaitGroup.Done()
@@ -116,7 +116,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 			// API Call error here. No package received from Packagist
 			r := &ResolverResult{
 				Package: j,
-				Error: fmt.Errorf("API Call to Packagist successful, but o package received"),
+				Error:   fmt.Errorf("API Call to Packagist successful, but o package received"),
 			}
 			results <- r
 			d.WaitGroup.Done()
@@ -142,19 +142,19 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 					d.WaitGroup.Add(2)
 					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
 
-					go func(){
+					go func() {
 						jobs <- packageToResolve
 						d.WaitGroup.Done()
 					}()
 					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
 					/*
-					d.WaitGroup.Add(1)
-					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
-					// This can block if the channel has not a big buffer
-					// Reason ist einfach: Alle adden packete und blocken hier.
-					jobs <- packageToResolve
-					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
-					 */
+						d.WaitGroup.Add(1)
+						log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
+						// This can block if the channel has not a big buffer
+						// Reason ist einfach: Alle adden packete und blocken hier.
+						jobs <- packageToResolve
+						log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
+					*/
 				}
 			}
 		}
@@ -163,7 +163,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 		resolvedPackage, _ := NewPackage(p.Name)
 		r := &ResolverResult{
 			Package: resolvedPackage,
-			Error: nil,
+			Error:   nil,
 		}
 		results <- r
 		d.WaitGroup.Done()
