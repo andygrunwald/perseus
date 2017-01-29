@@ -69,12 +69,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 						"psr/log": "~1.0",
 					},
 				},
-				"2.8.7": {
-					Require: map[string]string{
-						"php": ">=5.3.9",
-						"psr/log": "~1.0",
-					},
-				},
+				"2.8.7": {},
 			},
 		}
 		return p, nil, nil
@@ -101,10 +96,32 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 						"php": ">=5.3.0",
 					},
 				},
+				"1.0.1": {
+					Require: map[string]string{
+						// With this entry we test two things:
+						// 1. A true return of isPackageAlreadyResolved (because this package is resolved at first)
+						// 2. If we can deal with circular dependency
+						// Tricky and neat :)
+						"symfony/console": "~3.0",
+					},
+				},
 			},
 		}
 		return p, nil, nil
+	// Simulate: API returns valid content for symfony/translation
+	case "symfony/translation":
+		fallthrough
+	case "doctrine/doctrine-bundle":
+		fallthrough
+	case "jms/metadata":
+		fallthrough
+	case "zf1/zend-registry":
+		p := &packagist.Package{
+			Name: name,
+		}
+		return p, nil, nil
 	}
+
 
 	return nil, nil, nil
 }
@@ -229,5 +246,23 @@ func BenchmarkPackagistDependencyResolver_SuccessSymfonyConsole(b *testing.B) {
 	p := "symfony/console"
 	for n := 0; n < b.N; n++ {
 		resolvePackages(b, p)
+	}
+}
+
+func TestPackagistDependencyResolver_ReplacedPackageNames(t *testing.T) {
+	tests := []struct {
+		packageName            string
+		replacedPackageName     string
+	}{
+		{"symfony/translator", "symfony/translation"},
+		{"symfony/doctrine-bundle", "doctrine/doctrine-bundle"},
+		{"metadata/metadata", "jms/metadata"},
+		{"zendframework/zend-registry", "zf1/zend-registry"},
+	}
+
+	for _, tt := range tests {
+		if got := resolvePackages(t, tt.packageName); got[0].Package.Name != tt.replacedPackageName {
+			t.Errorf("Package %s was not replaced as expected. Expected: %s, got: %s", tt.packageName, tt.replacedPackageName, got[0].Package.Name)
+		}
 	}
 }
