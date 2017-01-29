@@ -9,6 +9,13 @@ import (
 	. "github.com/andygrunwald/perseus/perseus"
 )
 
+// testError is an interface to be able to handle
+// t *testing.T and b *testing.B in the same way.
+// Checkout the usage.
+type testError interface {
+	Errorf(format string, args ...interface{})
+}
+
 // testApiClient is a dummy implementation for packagist.ApiClient
 // for unit test purpse
 type testApiClient struct{}
@@ -131,7 +138,9 @@ func TestNewDependencyResolver_Error(t *testing.T) {
 	}
 }
 
-func resolvePackages(t *testing.T, packageName string) []*Result {
+// resolvePackages is a small helper function to avoid code duplication
+// It will start the dependency resolver for packageName
+func resolvePackages(t testError, packageName string) []*Result {
 	apiClient := &testApiClient{}
 	d, err := NewDependencyResolver(packageName, 3, apiClient)
 	if err != nil {
@@ -149,6 +158,7 @@ func resolvePackages(t *testing.T, packageName string) []*Result {
 	return r
 }
 
+// isStringInResult returns true once needle was found in haystack
 func isStringInResult(needle string, haystack []*Result) bool {
 	for _, b := range haystack {
 		if b.Package == nil {
@@ -212,5 +222,12 @@ func TestPackagistDependencyResolver_SuccessSymfonyConsole(t *testing.T) {
 	p = "psr/log"
 	if isStringInResult(p, got) == false {
 		t.Errorf("Expected package %s in resultset. Not found.", p)
+	}
+}
+
+func BenchmarkPackagistDependencyResolver_SuccessSymfonyConsole(b *testing.B) {
+	p := "symfony/console"
+	for n := 0; n < b.N; n++ {
+		resolvePackages(b, p)
 	}
 }
