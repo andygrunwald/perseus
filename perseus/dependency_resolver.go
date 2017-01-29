@@ -78,20 +78,23 @@ func (d *PackagistDependencyResolver) GetResultStream() <-chan *Result {
 }
 
 func (d *PackagistDependencyResolver) Start() {
+	// Boot up worker routines
 	for w := 1; w <= d.workerCount; w++ {
 		go d.worker(w, d.queue, d.results)
 	}
 
+	// Add the root package to the queue
 	d.waitGroup.Add(1)
 	p, _ := NewPackage(d.Package)
 	d.queue <- p
 
+	// Wait until all packages are resolved and close everything
 	d.waitGroup.Wait()
 	close(d.queue)
 	close(d.results)
 }
 
-func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results chan<- *Result) {
+func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, results chan<- *Result) {
 	log.Printf("Worker %d: Started", id)
 	for j := range d.queue {
 		packageName := j.Name
@@ -186,18 +189,22 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 	log.Printf("Worker %d: done", id)
 }
 
+// markAsResolved will mark package p as resolved.
 func (d *PackagistDependencyResolver) markAsResolved(p string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.resolved = append(d.resolved, p)
 }
 
+// markAsQueued will mark package p as queued.
 func (d *PackagistDependencyResolver) markAsQueued(p string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.queued = append(d.queued, p)
 }
 
+// isPackageAlreadyResolved returns true if package p was already resolved.
+// False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -209,6 +216,8 @@ func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 	return false
 }
 
+// isPackageAlreadyQueued returns true if package p was already queued.
+// False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -220,6 +229,12 @@ func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
 	return false
 }
 
+// shouldPackageBeQueued will return true if package p should be queued.
+// False otherwise.
+// A package should be queued if
+// - it is not a system package
+// - was not already queued
+// - was not already resolved
 func (d *PackagistDependencyResolver) shouldPackageBeQueued(p string) bool {
 	if d.isSystemPackage(p) {
 		return false
@@ -236,8 +251,13 @@ func (d *PackagistDependencyResolver) shouldPackageBeQueued(p string) bool {
 	return true
 }
 
+// isSystemPackage returns true if p is a system package. False otherwise.
+//
+// A system package is a package that is not part of your package repository
+// and and it needs to be fulfilled by the system.
+// Examples: php, ext-curl
 func (d *PackagistDependencyResolver) isSystemPackage(p string) bool {
-	// If the package name don`t contain a "/" we will skip it here.
+	// If the package name don't contain a "/" we will skip it here.
 	// In a composer.json in the require / require-dev part you normally add packaged
 	// you depend on. A package name follows the format "vendor/package".
 	// E.g. symfony/console
