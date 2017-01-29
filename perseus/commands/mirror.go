@@ -28,7 +28,7 @@ func (c *MirrorCommand) Run() error {
 		c.Log.Println(err)
 	}
 
-	pUrl := "https://packagist.org"
+	pUrl := "https://packagist.org/"
 	require := c.Config.GetRequire()
 	for _, v := range require {
 
@@ -46,13 +46,22 @@ func (c *MirrorCommand) Run() error {
 		//	That are mentioned IN the dependency resolver comments
 		//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
 		// 	And this works for now.
-		d := perseus.NewDependencyResolver(v, packagistClient)
-		dependencies := d.Resolve()
+		// TODO Make number of worker configurable
+		d := perseus.NewDependencyResolver(v, 3, packagistClient)
+		results := d.GetResults()
+		go d.Start()
+
+		dependencies := []string{}
+		// Finally we collect all the results of the work.
+		for v := range results {
+			dependencies = append(dependencies, v.Package.Name)
+		}
+
 		// TODO List all deps here instead of the number
 		c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), v, pUrl)
 
 		for _, p := range dependencies {
-			repos = append(repos, p.Name)
+			repos = append(repos, p)
 		}
 	}
 

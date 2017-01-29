@@ -2,27 +2,47 @@ package perseus
 
 import (
 	"strings"
+	"sync"
+	"fmt"
+	"log"
 
 	"github.com/andygrunwald/perseus/packagist"
 )
 
 type DependencyResolver interface {
-	Resolve() []*Package
+	Start()
+	GetResults() chan *ResolverResult
 }
 
-// DependencyResolver reflects the main structure of an Dependency Resolver :)
 type PackagistDependencyResolver struct {
+	NumWorker int
+	WaitGroup sync.WaitGroup
+	lock      sync.RWMutex
+	Jobs      chan *Package
+	results   chan *ResolverResult
+	Resolved  []string
+	Queued    []string
+
 	// Package contains the package name like "twig/twig" or "symfony/console"
-	Package string
+	Package   string
 
 	// Packagist is a Client to talk to a packagist instance
 	Packagist *packagist.Client
 }
 
-// NewDependencyResolver will create a new DependencyResolver to resolve all `required`
-// dependencies for packet
-func NewDependencyResolver(packet string, p *packagist.Client) DependencyResolver {
+type ResolverResult struct {
+	Package *Package
+	Error error
+}
+
+func NewDependencyResolver(packet string, worker int, p *packagist.Client) DependencyResolver {
 	d := &PackagistDependencyResolver{
+		NumWorker: worker,
+		WaitGroup: sync.WaitGroup{},
+		lock: sync.RWMutex{},
+		Jobs: make(chan *Package, 4),
+		results: make(chan *ResolverResult),
+		Resolved: []string{},
 		Package:   packet,
 		Packagist: p,
 	}
@@ -30,44 +50,33 @@ func NewDependencyResolver(packet string, p *packagist.Client) DependencyResolve
 	return d
 }
 
-func (d *PackagistDependencyResolver) Resolve() []*Package {
-	// TODO This method can be speed up by using maps instead of the stringInSlice lookup
+func (d *PackagistDependencyResolver) GetResults() chan *ResolverResult {
+	return d.results
+}
 
-	// TODO This can be speed up by concurrency, but i don`t know if it is worth the effort + complexity
-	// 	When it comes to concurrency it could be that we request a single package twice.
-	//	If it good? If its bad? If it worth the effort / speed?
-	//	I don`t know yet. But here are a few good ideas how to build in concurrency here:
-	//
-	//	- https://matt.aimonetti.net/posts/2012/11/27/real-life-concurrency-in-go/
-	//	- http://blog.narenarya.in/concurrent-http-in-go.html
-	//
-	//	I like the idea of the result struct. But all of them forget to close the channel
+func (d *PackagistDependencyResolver) Start() {
+	for w := 1; w <= d.NumWorker; w++ {
+		go d.worker(w, d.Jobs, d.results)
+	}
 
-	deps := []string{d.Package}
-	resolved := []*Package{}
-	var packet string
+	d.WaitGroup.Add(1)
+	p, _ := NewPackage(d.Package)
+	d.Jobs <- p
 
-	for len(deps) > 0 {
-		// Get the last element
-		packet, deps = deps[len(deps)-1], deps[:len(deps)-1]
+	d.WaitGroup.Wait()
+	close(d.Jobs)
+	close(d.results)
+}
 
-		// If the package name don`t contain a "/" we will skip it here.
-		// In a composer.json in the require / require-dev part you normally add packaged
-		// you depend on. A package name follows the format "vendor/package".
-		// E.g. symfony/console
-		// You can put other dependencies in here as well like `php` or `ext-zip`.
-		// Those dependencies will be skipped (because they don`t have a vendor ;)).
-		// The reason is simple: If you try to request the package "php" at packagist
-		// you won`t get a JSON response with information we expect.
-		// You will get valid HTML of the packagist search.
-		// To avoid those errors and to save API calls we skip dependencies without a vendor.
-		//
-		// This follows the documentation as well:
-		//
-		// 	The package name consists of a vendor name and the project's name.
-		// 	Often these will be identical - the vendor name just exists to prevent naming clashes.
-		//	Source: https://getcomposer.org/doc/01-basic-usage.md
-		if !strings.Contains(packet, "/") {
+func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results chan<- *ResolverResult) {
+	//time.Sleep(5 * time.Second)
+	log.Printf("Worker %d: Started", id)
+	for j := range d.Jobs {
+		packageName := j.Name
+		log.Printf("Worker %d: With job %s", id, packageName)
+		if d.isSystemPackage(packageName) {
+			d.WaitGroup.Done()
+			log.Printf("Worker %d: With job %s skipped", id, packageName)
 			continue
 		}
 
@@ -75,65 +84,160 @@ func (d *PackagistDependencyResolver) Resolve() []*Package {
 		// TODO Fix this dirty hack here. Medusa does it exactly like this.
 		// We overwrite packages, because they are added as dependencies to some
 		// Maybe we should just skip it
-		if packet == "symfony/translator" {
-			packet = "symfony/translation"
+		if packageName == "symfony/translator" {
+			packageName = "symfony/translation"
 		}
-		if packet == "symfony/doctrine-bundle" {
-			packet = "doctrine/doctrine-bundle"
+		if packageName == "symfony/doctrine-bundle" {
+			packageName = "doctrine/doctrine-bundle"
 		}
-		if packet == "metadata/metadata" {
-			packet = "jms/metadata"
+		if packageName == "metadata/metadata" {
+			packageName = "jms/metadata"
 		}
-		if packet == "zendframework/zend-registry" {
-			packet = "zf1/zend-registry"
+		if packageName == "zendframework/zend-registry" {
+			packageName = "zf1/zend-registry"
 		}
 
-		p, _, err := d.Packagist.GetPackage(packet)
+		p, _, err := d.Packagist.GetPackage(packageName)
+		log.Printf("Worker %d: Got packagist response for %s", id, packageName)
 		if err != nil {
-			// TODO What to do when we have an api call error here? fix it
-			panic(err)
+			log.Printf("Worker %d: Failed result #1 sent for package %s", id, packageName)
+			// API Call error here. Request to Packagist failed
+			// TODO Maybe a little bit more information? Return code?
+			r := &ResolverResult{
+				Package: j,
+				Error: err,
+			}
+			results <- r
+			d.WaitGroup.Done()
+			continue
 		}
 		if p == nil {
-			// TODO What to do when nothing comes back from packagist? fix it
-			panic("DependencyResolver -> Resolve: Nothing from packagist")
+			log.Printf("Worker %d: Failed result #2 sent for package %s", id, packageName)
+			// API Call error here. No package received from Packagist
+			r := &ResolverResult{
+				Package: j,
+				Error: fmt.Errorf("API Call to Packagist successful, but o package received"),
+			}
+			results <- r
+			d.WaitGroup.Done()
+			continue
 		}
 
 		// Loop over versions
 		for _, version := range p.Versions {
 			// If we don` have required packaged, we can handle the next one
 			if len(version.Require) == 0 {
+				log.Printf("Worker %d: Nothing to require for package %s", id, packageName)
 				continue
 			}
 
 			for dependency, _ := range version.Require {
-				if !stringInPacketlist(dependency, resolved) && !stringInSlice(dependency, deps) {
-					deps = append(deps, dependency)
-					// $deps = array_unique($deps);
+				// TODO Add a global check via Set is it a member
+				if d.shouldPackageBeQueued(dependency) {
+					log.Printf("Worker %d: New package queued %s -> %s", id, packageName, dependency)
+					d.markAsQueued(dependency)
+
+					packageToResolve, _ := NewPackage(dependency)
+					// 2 wegen einmal dem Package und einmal der neuen Go-Routine
+					d.WaitGroup.Add(2)
+					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
+
+					go func(){
+						jobs <- packageToResolve
+						d.WaitGroup.Done()
+					}()
+					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
+					/*
+					d.WaitGroup.Add(1)
+					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
+					// This can block if the channel has not a big buffer
+					// Reason ist einfach: Alle adden packete und blocken hier.
+					jobs <- packageToResolve
+					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
+					 */
 				}
 			}
 		}
 
-		resolvedPackage, err := NewPackage(p.Name)
-		resolved = append(resolved, resolvedPackage)
+		log.Printf("Worker %d: Package resolved %s", id, p.Name)
+		resolvedPackage, _ := NewPackage(p.Name)
+		r := &ResolverResult{
+			Package: resolvedPackage,
+			Error: nil,
+		}
+		results <- r
+		d.WaitGroup.Done()
+		d.markAsResolved(p.Name)
 	}
-
-	return resolved
+	log.Printf("Worker %d: done", id)
 }
 
-func stringInPacketlist(a string, list []*Package) bool {
-	for _, b := range list {
-		if b.Name == a {
+func (d *PackagistDependencyResolver) markAsResolved(p string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.Resolved = append(d.Resolved, p)
+}
+
+func (d *PackagistDependencyResolver) markAsQueued(p string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	d.Queued = append(d.Queued, p)
+}
+
+func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	for _, b := range d.Resolved {
+		if b == p {
 			return true
 		}
 	}
 	return false
 }
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
+func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+	for _, b := range d.Queued {
+		if b == p {
 			return true
 		}
 	}
 	return false
+}
+
+func (d *PackagistDependencyResolver) shouldPackageBeQueued(p string) bool {
+	if d.isSystemPackage(p) {
+		return false
+	}
+
+	if d.isPackageAlreadyQueued(p) {
+		return false
+	}
+
+	if d.isPackageAlreadyResolved(p) {
+		return false
+	}
+
+	return true
+}
+
+func (d *PackagistDependencyResolver) isSystemPackage(p string) bool {
+	// If the package name don`t contain a "/" we will skip it here.
+	// In a composer.json in the require / require-dev part you normally add packaged
+	// you depend on. A package name follows the format "vendor/package".
+	// E.g. symfony/console
+	// You can put other dependencies in here as well like `php` or `ext-zip`.
+	// Those dependencies will be skipped (because they don`t have a vendor ;)).
+	// The reason is simple: If you try to request the package "php" at packagist
+	// you won`t get a JSON response with information we expect.
+	// You will get valid HTML of the packagist search.
+	// To avoid those errors and to save API calls we skip dependencies without a vendor.
+	//
+	// This follows the documentation as well:
+	//
+	// 	The package name consists of a vendor name and the project's name.
+	// 	Often these will be identical - the vendor name just exists to prevent naming clashes.
+	//	Source: https://getcomposer.org/doc/01-basic-usage.md
+	return !strings.Contains(p, "/")
 }

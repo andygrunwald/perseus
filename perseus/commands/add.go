@@ -55,7 +55,7 @@ func (c *AddCommand) Run() error {
 
 		dependencies := []*perseus.Package{p}
 		if c.WithDependencies {
-			pUrl := "https://packagist.org"
+			pUrl := "https://packagist.org/"
 			c.Log.Printf("Loading dependencies for package \"%s\" from %s", c.Package, pUrl)
 			packagistClient, err := packagist.New(pUrl, nil)
 			if err != nil {
@@ -69,8 +69,17 @@ func (c *AddCommand) Run() error {
 			//	That are mentioned IN the dependency resolver comments
 			//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
 			// 	And this works for now.
-			d := perseus.NewDependencyResolver(p.Name, packagistClient)
-			dependencies = d.Resolve()
+			// TODO Make number of worker configurable
+			d := perseus.NewDependencyResolver(p.Name, 3, packagistClient)
+			results := d.GetResults()
+			go d.Start()
+
+			dependencies := []string{}
+			// Finally we collect all the results of the work.
+			for v := range results {
+				dependencies = append(dependencies, v.Package.Name)
+			}
+
 			// TODO List all deps here instead of the number
 			c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), c.Package, pUrl)
 		}
