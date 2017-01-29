@@ -83,8 +83,7 @@ func (c *AddCommand) Run() error {
 				dependencies = append(dependencies, v.Package.Name)
 			}
 
-			// TODO List all deps here instead of the number
-			c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), c.Package, pUrl)
+			c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencies), c.Package, pUrl, strings.Join(dependencies, ", "))
 		}
 
 		// Download package incl. dependencies concurrent
