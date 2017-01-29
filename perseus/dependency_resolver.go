@@ -2,7 +2,6 @@ package perseus
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
@@ -77,6 +76,7 @@ func (d *PackagistDependencyResolver) GetResultStream() <-chan *Result {
 	return d.results
 }
 
+// Start will kick of the dependency resolver process.
 func (d *PackagistDependencyResolver) Start() {
 	// Boot up worker routines
 	for w := 1; w <= d.workerCount; w++ {
@@ -94,19 +94,26 @@ func (d *PackagistDependencyResolver) Start() {
 	close(d.results)
 }
 
+// worker is a single worker routine. This worker will be launched multiple times to work on
+// the queue as efficient as possible.
+// id the a id per worker (only for logging/debugging purpose).
+// jobs is the jobs channel (the worker needs to be able to add more jobs to the queue as well).
+// results is the channel where all results will be stored once they are resolved.
 func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, results chan<- *Result) {
-	log.Printf("Worker %d: Started", id)
+	// Worker has started. Lets do the hard work. Gimme the jobs.
 	for j := range d.queue {
 		packageName := j.Name
-		log.Printf("Worker %d: With job %s", id, packageName)
+
+		// We don't need to process system packages.
+		// System packages (like php or ext-curl) needs to be fulfilled by the system.
+		// Not by the ApiClient
 		if d.isSystemPackage(packageName) {
 			d.waitGroup.Done()
-			log.Printf("Worker %d: With job %s skipped", id, packageName)
 			continue
 		}
 
 		// Overwrite a package here
-		// TODO Fix this dirty hack here. Medusa does it exactly like this.
+		// TODO Fix this dirty hack here. Medusa does it exactly like this. PS: Why this is necessary at all?
 		// We overwrite packages, because they are added as dependencies to some
 		// Maybe we should just skip it
 		if packageName == "symfony/translator" {
@@ -122,10 +129,10 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 			packageName = "zf1/zend-registry"
 		}
 
+		// TODO Respect response here
+		// Get information about the package from ApiClient
 		p, _, err := d.packagist.GetPackage(packageName)
-		log.Printf("Worker %d: Got packagist response for %s", id, packageName)
 		if err != nil {
-			log.Printf("Worker %d: Failed result #1 sent for package %s", id, packageName)
 			// API Call error here. Request to Packagist failed
 			// TODO Maybe a little bit more information? Return code?
 			r := &Result{
@@ -136,47 +143,59 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 			d.waitGroup.Done()
 			continue
 		}
+		// Check if we got information from Packagist.
+		// Maybe no error was thrown, but no package comes with the payload.
+		// For us, as a dependency resolver, this is equal an error.
 		if p == nil {
-			log.Printf("Worker %d: Failed result #2 sent for package %s", id, packageName)
 			// API Call error here. No package received from Packagist
+			// TODO Add response code
 			r := &Result{
 				Package: j,
-				Error:   fmt.Errorf("API Call to Packagist successful, but o package received"),
+				Error:   fmt.Errorf("API Call to Packagist successful, but no package received"),
 			}
 			results <- r
 			d.waitGroup.Done()
 			continue
 		}
 
-		// Loop over versions
+		// Now we got the package.
+		// Let us determine all requirements / dependencies from all versions,
+		// because those packages needs to be resolved as well
 		for _, version := range p.Versions {
 			// If we don` have required packaged, we can handle the next one
 			if len(version.Require) == 0 {
-				log.Printf("Worker %d: Nothing to require for package %s", id, packageName)
 				continue
 			}
 
+			// Handle dependency per dependency
 			for dependency, _ := range version.Require {
 				// TODO Add a global check via Set is it a member
+				// We check if this dependency was already queued.
+				// It is typical that many different versions of one package don't
+				// change dependencies so often. So we would queue one package
+				// multiple times. With this small check we save a lot of work here.
 				if d.shouldPackageBeQueued(dependency) {
-					log.Printf("Worker %d: New package queued %s -> %s", id, packageName, dependency)
 					d.markAsQueued(dependency)
 
 					packageToResolve, _ := NewPackage(dependency)
 					// 2 wegen einmal dem Package und einmal der neuen Go-Routine
+					// We add two additional waitgroup entries here.
+					// You might ask why? Reguarly we add a new entry when we have a new package.
+					// Here we add two, because of a) the new package and b) the new queue
+					// entry of the package. We queue the package in a new go routine to
+					// avoid a blocking state here. But we need to know when this go routine
+					// is finished. So we observice this "Add package to queue" go routine
+					// with the same waitgroup.
 					d.waitGroup.Add(2)
-					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
-
 					go func() {
 						jobs <- packageToResolve
 						d.waitGroup.Done()
 					}()
-					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
 				}
 			}
 		}
 
-		log.Printf("Worker %d: Package resolved %s", id, p.Name)
+		// Package was resolved. Lets do everything which is necessary to change this package to a result.
 		resolvedPackage, _ := NewPackage(p.Name)
 		r := &Result{
 			Package: resolvedPackage,
@@ -186,7 +205,6 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 		d.waitGroup.Done()
 		d.markAsResolved(p.Name)
 	}
-	log.Printf("Worker %d: done", id)
 }
 
 // markAsResolved will mark package p as resolved.
