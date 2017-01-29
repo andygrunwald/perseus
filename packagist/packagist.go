@@ -50,7 +50,7 @@ type Composer struct {
 }
 
 // New will create a new Packagist client
-func New(instance string, httpClient *http.Client) (*Client, error) {
+func New(instance string, httpClient *http.Client) (ApiClient, error) {
 	if len(instance) == 0 {
 		return nil, errors.New("Instance URL is empty")
 	}

@@ -15,7 +15,7 @@ var (
 	testMux *http.ServeMux
 
 	// testClient is the Packagist client being tested.
-	testClient *Client
+	testClient ApiClient
 
 	// testServer is a test HTTP server used to provide mock API responses.
 	testServer *httptest.Server

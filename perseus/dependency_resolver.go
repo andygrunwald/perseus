@@ -9,73 +9,95 @@ import (
 	"github.com/andygrunwald/perseus/packagist"
 )
 
+// DependencyResolver is an interface to resolve package dependencies
 type DependencyResolver interface {
 	Start()
-	GetResults() chan *ResolverResult
+	GetResultStream() <-chan *Result
 }
 
+// PackagistDependencyResolver is an implementation of DependencyResolver
+// that will resolve the dependencies of a package with the help of https://packagist.org/
 type PackagistDependencyResolver struct {
-	NumWorker int
-	WaitGroup sync.WaitGroup
-	lock      sync.RWMutex
-	Jobs      chan *Package
-	results   chan *ResolverResult
-	Resolved  []string
-	Queued    []string
-
 	// Package contains the package name like "twig/twig" or "symfony/console"
 	Package string
+	// packagist is a Client to talk to a packagist instance
+	packagist packagist.ApiClient
 
-	// Packagist is a Client to talk to a packagist instance
-	Packagist *packagist.Client
+	// workerCount is the number of worker that will be started
+	workerCount int
+	waitGroup   sync.WaitGroup
+	lock        sync.RWMutex
+	// queue is the queue channel where all jobs are stored that needs to be processed by the worker
+	queue chan *Package
+	// results is the channel where all resolved dependencies will be streamed
+	results chan *Result
+	// resolved is a storage to track which packages are already resolved
+	resolved []string
+	// queued is a storage to track which packages were already queued
+	queued []string
 }
 
-type ResolverResult struct {
+// Result reflects a result of a dependency resolver process.
+type Result struct {
 	Package *Package
 	Error   error
 }
 
-func NewDependencyResolver(packet string, worker int, p *packagist.Client) DependencyResolver {
-	d := &PackagistDependencyResolver{
-		NumWorker: worker,
-		WaitGroup: sync.WaitGroup{},
-		lock:      sync.RWMutex{},
-		Jobs:      make(chan *Package, 4),
-		results:   make(chan *ResolverResult),
-		Resolved:  []string{},
-		Package:   packet,
-		Packagist: p,
+// NewDependencyResolver will create a new instance of a DependencyResolver.
+// Standard implementation is the PackagistDependencyResolver.
+func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiClient) (DependencyResolver, error) {
+	if len(packageName) == 0 {
+		return nil, fmt.Errorf("No package name given.")
+	}
+	if numOfWorker == 0 {
+		return nil, fmt.Errorf("Starting a dependency resolver with zero worker is not possible")
+	}
+	if p == nil {
+		return nil, fmt.Errorf("Starting a dependency resolver with an empty ApiClient is not possible")
 	}
 
-	return d
+	d := &PackagistDependencyResolver{
+		workerCount: numOfWorker,
+		waitGroup:   sync.WaitGroup{},
+		lock:        sync.RWMutex{},
+		queue:       make(chan *Package, 4),
+		results:     make(chan *Result),
+		resolved:    []string{},
+		Package:     packageName,
+		packagist:   p,
+	}
+
+	return d, nil
 }
 
-func (d *PackagistDependencyResolver) GetResults() chan *ResolverResult {
+// GetResultStream will return the results stream.
+// During the process of resolving dependencies, this channel will be filled
+// with the results. Those can be processed next to the resolve process.
+func (d *PackagistDependencyResolver) GetResultStream() <-chan *Result {
 	return d.results
 }
 
 func (d *PackagistDependencyResolver) Start() {
-	for w := 1; w <= d.NumWorker; w++ {
-		go d.worker(w, d.Jobs, d.results)
+	for w := 1; w <= d.workerCount; w++ {
+		go d.worker(w, d.queue, d.results)
 	}
 
-	d.WaitGroup.Add(1)
+	d.waitGroup.Add(1)
 	p, _ := NewPackage(d.Package)
-	d.Jobs <- p
+	d.queue <- p
 
-	d.WaitGroup.Wait()
-	close(d.Jobs)
+	d.waitGroup.Wait()
+	close(d.queue)
 	close(d.results)
 }
 
-func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results chan<- *ResolverResult) {
-	//time.Sleep(5 * time.Second)
+func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results chan<- *Result) {
 	log.Printf("Worker %d: Started", id)
-	for j := range d.Jobs {
+	for j := range d.queue {
 		packageName := j.Name
 		log.Printf("Worker %d: With job %s", id, packageName)
 		if d.isSystemPackage(packageName) {
-			d.WaitGroup.Done()
+			d.waitGroup.Done()
 			log.Printf("Worker %d: With job %s skipped", id, packageName)
 			continue
 		}
@@ -97,29 +119,29 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 			packageName = "zf1/zend-registry"
 		}
 
-		p, _, err := d.Packagist.GetPackage(packageName)
+		p, _, err := d.packagist.GetPackage(packageName)
 		log.Printf("Worker %d: Got packagist response for %s", id, packageName)
 		if err != nil {
 			log.Printf("Worker %d: Failed result #1 sent for package %s", id, packageName)
 			// API Call error here. Request to Packagist failed
 			// TODO Maybe a little bit more information? Return code?
-			r := &ResolverResult{
+			r := &Result{
 				Package: j,
 				Error:   err,
 			}
 			results <- r
-			d.WaitGroup.Done()
+			d.waitGroup.Done()
 			continue
 		}
 		if p == nil {
 			log.Printf("Worker %d: Failed result #2 sent for package %s", id, packageName)
 			// API Call error here. No package received from Packagist
-			r := &ResolverResult{
+			r := &Result{
 				Package: j,
 				Error:   fmt.Errorf("API Call to Packagist successful, but o package received"),
 			}
 			results <- r
-			d.WaitGroup.Done()
+			d.waitGroup.Done()
 			continue
 		}
 
@@ -139,34 +161,26 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 
 					packageToResolve, _ := NewPackage(dependency)
 					// 2 wegen einmal dem Package und einmal der neuen Go-Routine
-					d.WaitGroup.Add(2)
+					d.waitGroup.Add(2)
 					log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
 
 					go func() {
 						jobs <- packageToResolve
-						d.WaitGroup.Done()
+						d.waitGroup.Done()
 					}()
 					log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
-					/*
-						d.WaitGroup.Add(1)
-						log.Printf("Worker %d: New package queued (before) %s -> %s", id, packageName, dependency)
-						// This can block if the channel has not a big buffer
-						// Reason ist einfach: Alle adden packete und blocken hier.
-						jobs <- packageToResolve
-						log.Printf("Worker %d: New package queued (after) %s -> %s", id, packageName, dependency)
-					*/
 				}
 			}
 		}
 
 		log.Printf("Worker %d: Package resolved %s", id, p.Name)
 		resolvedPackage, _ := NewPackage(p.Name)
-		r := &ResolverResult{
+		r := &Result{
 			Package: resolvedPackage,
 			Error:   nil,
 		}
 		results <- r
-		d.WaitGroup.Done()
+		d.waitGroup.Done()
 		d.markAsResolved(p.Name)
 	}
 	log.Printf("Worker %d: done", id)
@@ -175,19 +189,19 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan *Package, results
 func (d *PackagistDependencyResolver) markAsResolved(p string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	d.Resolved = append(d.Resolved, p)
+	d.resolved = append(d.resolved, p)
 }
 
 func (d *PackagistDependencyResolver) markAsQueued(p string) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-	d.Queued = append(d.Queued, p)
+	d.queued = append(d.queued, p)
 }
 
 func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	for _, b := range d.Resolved {
+	for _, b := range d.resolved {
 		if b == p {
 			return true
 		}
@@ -198,7 +212,7 @@ func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
-	for _, b := range d.Queued {
+	for _, b := range d.queued {
 		if b == p {
 			return true
 		}

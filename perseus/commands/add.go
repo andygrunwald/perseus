@@ -70,8 +70,11 @@ func (c *AddCommand) Run() error {
 			//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
 			// 	And this works for now.
 			// TODO Make number of worker configurable
-			d := perseus.NewDependencyResolver(p.Name, 3, packagistClient)
-			results := d.GetResults()
+			d, err := perseus.NewDependencyResolver(p.Name, 3, packagistClient)
+			if err != nil {
+				return err
+			}
+			results := d.GetResultStream()
 			go d.Start()
 
 			dependencies := []string{}
