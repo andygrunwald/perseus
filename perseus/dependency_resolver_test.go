@@ -1,12 +1,12 @@
 package perseus_test
 
 import (
-	"testing"
 	"net/http"
+	"testing"
 
+	"fmt"
 	"github.com/andygrunwald/perseus/packagist"
 	. "github.com/andygrunwald/perseus/perseus"
-	"fmt"
 )
 
 // testApiClient is a dummy implementation for packagist.ApiClient
@@ -24,6 +24,79 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 	// Simulate: API returns nothing for the package
 	case "api/empty":
 		return nil, nil, nil
+	// Simulate: API returns valid content for symfony/console
+	case "symfony/console":
+		p := &packagist.Package{
+			Name: name,
+			Versions: map[string]packagist.Composer{
+				"3.2.2": {
+					Require: map[string]string{
+						"php": ">=5.5.9",
+						"symfony/polyfill-mbstring": " ~1.0",
+						"symfony/debug":             "~2.8|~3.0",
+					},
+				},
+				"2.8.12": {
+					Require: map[string]string{
+						"php": ">=5.3.9",
+						"symfony/polyfill-mbstring": " ~1.0",
+						"symfony/debug":             "~2.7,>=2.7.2|~3.0.0",
+					},
+				},
+				"2.0.4": {
+					Require: map[string]string{
+						"php": ">=5.3.2",
+					},
+				},
+			},
+		}
+		return p, nil, nil
+	// Simulate: API returns valid content for symfony/debug
+	case "symfony/debug":
+		p := &packagist.Package{
+			Name: name,
+			Versions: map[string]packagist.Composer{
+				"3.2.1": {
+					Require: map[string]string{
+						"php": ">=5.5.9",
+						"psr/log": "~1.0",
+					},
+				},
+				"2.8.7": {
+					Require: map[string]string{
+						"php": ">=5.3.9",
+						"psr/log": "~1.0",
+					},
+				},
+			},
+		}
+		return p, nil, nil
+	// Simulate: API returns valid content for symfony/polyfill-mbstring
+	case "symfony/polyfill-mbstring":
+		p := &packagist.Package{
+			Name: name,
+			Versions: map[string]packagist.Composer{
+				"1.3.0": {
+					Require: map[string]string{
+						"php": ">=5.3.3",
+					},
+				},
+			},
+		}
+		return p, nil, nil
+	// Simulate: API returns valid content for psr/log
+	case "psr/log":
+		p := &packagist.Package{
+			Name: name,
+			Versions: map[string]packagist.Composer{
+				"1.0.2": {
+					Require: map[string]string{
+						"php": ">=5.3.0",
+					},
+				},
+			},
+		}
+		return p, nil, nil
 	}
 
 	return nil, nil, nil
@@ -76,6 +149,18 @@ func resolvePackages(t *testing.T, packageName string) []*Result {
 	return r
 }
 
+func isStringInResult(needle string, haystack []*Result) bool {
+	for _, b := range haystack {
+		if b.Package == nil {
+			return false
+		}
+		if b.Package.Name == needle {
+			return true
+		}
+	}
+	return false
+}
+
 func TestPackagistDependencyResolver_SystemPackage(t *testing.T) {
 	got := resolvePackages(t, "php")
 
@@ -99,5 +184,33 @@ func TestPackagistDependencyResolver_EmptyPackageFromApiClient(t *testing.T) {
 
 	if got[0].Error == nil {
 		t.Errorf("Expected an error for package %s to emulate an empty package from API. Got nothing", p)
+	}
+}
+
+func TestPackagistDependencyResolver_SuccessSymfonyConsole(t *testing.T) {
+	p := "symfony/console"
+	got := resolvePackages(t, p)
+
+	if n := len(got); n != 4 {
+		t.Errorf("Expected four resolved dependencies. Got %d: %+v", n, got)
+	}
+
+	if isStringInResult(p, got) == false {
+		t.Errorf("Expected package %s in resultset. Not found.", p)
+	}
+
+	p = "symfony/polyfill-mbstring"
+	if isStringInResult(p, got) == false {
+		t.Errorf("Expected package %s in resultset. Not found.", p)
+	}
+
+	p = "symfony/debug"
+	if isStringInResult(p, got) == false {
+		t.Errorf("Expected package %s in resultset. Not found.", p)
+	}
+
+	p = "psr/log"
+	if isStringInResult(p, got) == false {
+		t.Errorf("Expected package %s in resultset. Not found.", p)
 	}
 }
