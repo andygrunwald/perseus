@@ -118,18 +118,16 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 		// We overwrite specific packages, because they are added as dependencies to some older tags.
 		// And those was renamed (for some reasons). But we are scanning all tags / branches.
 		if r, ok := d.replacee[packageName]; ok {
-			//packageName = r
+			packageName = r
 		}
 
-		// TODO Respect response here
 		// Get information about the package from ApiClient
-		p, _, err := d.packagist.GetPackage(packageName)
+		p, resp, err := d.packagist.GetPackage(packageName)
 		if err != nil {
 			// API Call error here. Request to Packagist failed
-			// TODO Maybe a little bit more information? Return code?
 			r := &Result{
 				Package: j,
-				Error:   err,
+				Error:   fmt.Errorf("API returned status code %d: %s", resp.StatusCode, err),
 			}
 			results <- r
 			d.waitGroup.Done()
@@ -140,10 +138,9 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 		// For us, as a dependency resolver, this is equal an error.
 		if p == nil {
 			// API Call error here. No package received from Packagist
-			// TODO Add response code
 			r := &Result{
 				Package: j,
-				Error:   fmt.Errorf("API Call to Packagist successful, but no package received"),
+				Error:   fmt.Errorf("API Call to Packagist successful (Status code %d), but no package received", resp.StatusCode),
 			}
 			results <- r
 			d.waitGroup.Done()
