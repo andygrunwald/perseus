@@ -65,7 +65,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 			Versions: map[string]packagist.Composer{
 				"3.2.1": {
 					Require: map[string]string{
-						"php": ">=5.5.9",
+						"php":     ">=5.5.9",
 						"psr/log": "~1.0",
 					},
 				},
@@ -121,7 +121,6 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		}
 		return p, nil, nil
 	}
-
 
 	return nil, nil, nil
 }
@@ -251,8 +250,8 @@ func BenchmarkPackagistDependencyResolver_SuccessSymfonyConsole(b *testing.B) {
 
 func TestPackagistDependencyResolver_ReplacedPackageNames(t *testing.T) {
 	tests := []struct {
-		packageName            string
-		replacedPackageName     string
+		packageName         string
+		replacedPackageName string
 	}{
 		{"symfony/translator", "symfony/translation"},
 		{"symfony/doctrine-bundle", "doctrine/doctrine-bundle"},

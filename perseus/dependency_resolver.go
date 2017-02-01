@@ -34,6 +34,8 @@ type PackagistDependencyResolver struct {
 	resolved []string
 	// queued is a storage to track which packages were already queued
 	queued []string
+	// replacee is a hashmap to replace old/renamed/obsolete packages that would throw an error otherwise
+	replacee map[string]string
 }
 
 // Result reflects a result of a dependency resolver process.
@@ -64,6 +66,7 @@ func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiC
 		resolved:    []string{},
 		Package:     packageName,
 		packagist:   p,
+		replacee:    getReplaceeMap(),
 	}
 
 	return d, nil
@@ -112,21 +115,10 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 			continue
 		}
 
-		// Overwrite a package here
-		// TODO Fix this dirty hack here. Medusa does it exactly like this. PS: Why this is necessary at all?
-		// We overwrite packages, because they are added as dependencies to some
-		// Maybe we should just skip it
-		if packageName == "symfony/translator" {
-			packageName = "symfony/translation"
-		}
-		if packageName == "symfony/doctrine-bundle" {
-			packageName = "doctrine/doctrine-bundle"
-		}
-		if packageName == "metadata/metadata" {
-			packageName = "jms/metadata"
-		}
-		if packageName == "zendframework/zend-registry" {
-			packageName = "zf1/zend-registry"
+		// We overwrite specific packages, because they are added as dependencies to some older tags.
+		// And those was renamed (for some reasons). But we are scanning all tags / branches.
+		if r, ok := d.replacee[packageName]; ok {
+			//packageName = r
 		}
 
 		// TODO Respect response here
@@ -291,4 +283,33 @@ func (d *PackagistDependencyResolver) isSystemPackage(p string) bool {
 	// 	Often these will be identical - the vendor name just exists to prevent naming clashes.
 	//	Source: https://getcomposer.org/doc/01-basic-usage.md
 	return !strings.Contains(p, "/")
+}
+
+// getReplaceeMap will return a map of package names that needs to be replaced with some other package names.
+// We need to do this, because those packages was renamed a long time ago.
+// But the original packages are still part of older tags and branches.
+// I guess, those packages were renamed before even packagist exists.
+// That might explain the reason why there is no "obsolete"/"deprecated"-reference on packagist.
+// Anyway. We need to deal with it.
+// I tried so find some information why or when this packages were renamed.
+// If you have more information about this, please ping me or make a PR and add this information
+// as a simple comment. Might be useful for someone who is using this at a later stage.
+func getReplaceeMap() map[string]string {
+	m := map[string]string{
+		"symfony/translator": "symfony/translation",
+
+		// On January 2, 2012 they moved packages around.
+		// One of them was the symfony/doctrine-bundle => doctrine/doctrine-bundle move.
+		// Checkout the blogpost at https://symfony.com/blog/symfony-2-1-the-doctrine-bundle-has-moved-to-the-doctrine-organization
+		//
+		// Here are a few changes in packages / apps:
+		//	- Symfony standard: https://github.com/symfony/symfony-standard/commit/5dee24eb280452fe46e76f99706c21ab417462ac
+		//	- GeneratorBundle: https://github.com/sensiolabs/SensioGeneratorBundle/commit/11c9b68bd7f67a9cf3429d48af2d1a817dbd58cb#diff-b5d0ee8c97c7abd7e3fa29b9a27d1780
+		//
+		// Older tags still reference "symfony/doctrine-bundle".
+		"symfony/doctrine-bundle":     "doctrine/doctrine-bundle",
+		"metadata/metadata":           "jms/metadata",
+		"zendframework/zend-registry": "zf1/zend-registry",
+	}
+	return m
 }
