@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/andygrunwald/perseus/packagist"
+	"github.com/andygrunwald/perseus/types"
 )
 
 // DependencyResolver is an interface to resolve package dependencies
@@ -31,9 +32,9 @@ type PackagistDependencyResolver struct {
 	// results is the channel where all resolved dependencies will be streamed
 	results chan *Result
 	// resolved is a storage to track which packages are already resolved
-	resolved []string
+	resolved *types.Set
 	// queued is a storage to track which packages were already queued
-	queued []string
+	queued *types.Set
 	// replacee is a hashmap to replace old/renamed/obsolete packages that would throw an error otherwise
 	replacee map[string]string
 }
@@ -63,7 +64,8 @@ func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiC
 		lock:        sync.RWMutex{},
 		queue:       make(chan *Package, 4),
 		results:     make(chan *Result),
-		resolved:    []string{},
+		resolved:    types.New(),
+		queued:      types.New(),
 		Package:     packageName,
 		packagist:   p,
 		replacee:    getReplaceeMap(),
@@ -197,21 +199,29 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 
 // markAsResolved will mark package p as resolved.
 func (d *PackagistDependencyResolver) markAsResolved(p string) {
+	d.resolved.Add(p)
+	/*
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.resolved = append(d.resolved, p)
+	*/
 }
 
 // markAsQueued will mark package p as queued.
 func (d *PackagistDependencyResolver) markAsQueued(p string) {
+	d.queued.Add(p)
+	/*
 	d.lock.Lock()
 	defer d.lock.Unlock()
 	d.queued = append(d.queued, p)
+	*/
 }
 
 // isPackageAlreadyResolved returns true if package p was already resolved.
 // False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
+	return d.resolved.Exists(p)
+	/*
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	for _, b := range d.resolved {
@@ -220,11 +230,14 @@ func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 		}
 	}
 	return false
+	*/
 }
 
 // isPackageAlreadyQueued returns true if package p was already queued.
 // False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
+	return d.queued.Exists(p)
+	/*
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 	for _, b := range d.queued {
@@ -233,6 +246,7 @@ func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
 		}
 	}
 	return false
+	*/
 }
 
 // shouldPackageBeQueued will return true if package p should be queued.
