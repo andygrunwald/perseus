@@ -26,7 +26,7 @@ func (c *MirrorCommand) Run() error {
 
 	repos, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
-		if config.NoRepositoriesError(err) {
+		if config.IsNoRepositories(err) {
 			c.Log.Printf("Config: %s", err)
 		} else {
 			c.Log.Println(err)
