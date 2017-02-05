@@ -62,13 +62,8 @@ func (c *AddCommand) Run() error {
 				return err
 			}
 
-			// TODO Okay, here we don't take error handling serious.
-			//	Why? Easy. If an API request fails, we don't know it.
-			//	Why? Easy. Which packages will be skipped? e.g. "php" ?
-			//	We really have to refactor this. Checkout the articles / links
-			//	That are mentioned IN the dependency resolver comments
-			//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
-			// 	And this works for now.
+			// Lets get a dependency resolver.
+			// If we can't bootstrap one, we are lost anyway.
 			// TODO Make number of worker configurable
 			d, err := perseus.NewDependencyResolver(p.Name, 3, packagistClient)
 			if err != nil {
@@ -88,7 +83,6 @@ func (c *AddCommand) Run() error {
 
 		// Download package incl. dependencies concurrent
 		dependencyCount := len(dependencies)
-		// TODO Check: Make it a difference to put a buffer in it vs. no buffer at all? Ask gopher channel!
 		downloadsChan := make(chan downloadResult, dependencyCount)
 		defer close(downloadsChan)
 		c.startConcurrentDownloads(dependencies, downloadsChan)
