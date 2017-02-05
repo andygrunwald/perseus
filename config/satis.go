@@ -7,9 +7,22 @@ import (
 	"os"
 )
 
-// TODO Comment it to make it understandable
-// Mention the spec at https://github.com/composer/satis/blob/master/res/satis-schema.json
-// and why we don't implement it here (we are running repositories code only)
+// Satis (https://github.com/composer/satis) is a simple and static Composer repository generator.
+// Once medusa is finished it writes a satis file itself with a (kind of) dynamic content.
+// The content of the satis file is driven by the medusa config file + the results of the operations.
+// Operations are downloading packages or resolving dependency trees of those packages.
+// Once they are successful, the package will land into a satis file.
+//
+// The satis file itself is a typical JSON file.
+// It has various settings and is (nearly) complete documented via a schema
+// available at https://github.com/composer/satis/blob/master/res/satis-schema.json.
+// One proper solution would be to reflect this schema as a struct with JSON tags and read/write
+// those values via the struct.
+// In this file we do it differently. The reason is simple: We don't want to change perseus
+// once satis added a new feature into the JSON schema.
+// Perseus/Medusa is only interested to write the `repositories` section.
+// So we only modify this.
+// For implementation details checkout the WriteFile() function.
 
 // Satis reflects the a Satis configuration file.
 type Satis struct {
