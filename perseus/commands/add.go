@@ -27,6 +27,8 @@ type AddCommand struct {
 	Config *config.Medusa
 	// Log represents a logger to log messages
 	Log *log.Logger
+	// NumOfWorker is the number of worker used for concurrent actions (like resolving the dependency tree)
+	NumOfWorker int
 }
 
 // downloadResult represents the result of a download
@@ -64,8 +66,7 @@ func (c *AddCommand) Run() error {
 
 			// Lets get a dependency resolver.
 			// If we can't bootstrap one, we are lost anyway.
-			// TODO Make number of worker configurable
-			d, err := perseus.NewDependencyResolver(p.Name, 3, packagistClient)
+			d, err := perseus.NewDependencyResolver(p.Name, c.NumOfWorker, packagistClient)
 			if err != nil {
 				return err
 			}

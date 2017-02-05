@@ -27,10 +27,10 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 	switch name {
 	// Simulate: API returns an error
 	case "api/error":
-		return nil, &http.Response{StatusCode:http.StatusBadGateway}, fmt.Errorf("API returns an error")
+		return nil, &http.Response{StatusCode: http.StatusBadGateway}, fmt.Errorf("API returns an error")
 	// Simulate: API returns nothing for the package
 	case "api/empty":
-		return nil, &http.Response{StatusCode:http.StatusOK}, nil
+		return nil, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/console
 	case "symfony/console":
 		p := &packagist.Package{
@@ -57,7 +57,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 				},
 			},
 		}
-		return p, &http.Response{StatusCode:http.StatusOK}, nil
+		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/debug
 	case "symfony/debug":
 		p := &packagist.Package{
@@ -72,7 +72,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 				"2.8.7": {},
 			},
 		}
-		return p, &http.Response{StatusCode:http.StatusOK}, nil
+		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/polyfill-mbstring
 	case "symfony/polyfill-mbstring":
 		p := &packagist.Package{
@@ -85,7 +85,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 				},
 			},
 		}
-		return p, &http.Response{StatusCode:http.StatusOK}, nil
+		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for psr/log
 	case "psr/log":
 		p := &packagist.Package{
@@ -107,7 +107,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 				},
 			},
 		}
-		return p, &http.Response{StatusCode:http.StatusOK}, nil
+		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/translation
 	case "symfony/translation":
 		fallthrough
@@ -119,7 +119,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		p := &packagist.Package{
 			Name: name,
 		}
-		return p, &http.Response{StatusCode:http.StatusOK}, nil
+		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	}
 
 	return nil, nil, nil

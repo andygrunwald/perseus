@@ -1,8 +1,8 @@
 package commands_test
 
 import (
-	"testing"
 	. "github.com/andygrunwald/perseus/perseus/commands"
+	"testing"
 )
 
 func TestAddCommand_Run_WithEmptyPackage(t *testing.T) {
