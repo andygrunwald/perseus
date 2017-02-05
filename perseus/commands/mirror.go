@@ -26,8 +26,11 @@ func (c *MirrorCommand) Run() error {
 
 	repos, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
-		// TODO Define own error type and handle it here
-		c.Log.Println(err)
+		if config.NoRepositoriesError(err) {
+			c.Log.Printf("Config: %s", err)
+		} else {
+			c.Log.Println(err)
+		}
 	}
 
 	pUrl := "https://packagist.org/"
