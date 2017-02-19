@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andygrunwald/perseus/perseus"
 	"net/url"
+	"regexp"
 )
 
 // Medusa reflects the original Medusa configuration file.
@@ -53,6 +54,15 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 				if v, ok := repoEntryMap["url"]; ok {
 					// Check if the url is empty
 					if u := v.(string); len(u) > 0 {
+
+						// Sanite URL
+						// Not the best part here, i know
+						reg, err := regexp.Compile("^git@github.com:")
+						if err != nil {
+							return nil, err
+						}
+
+						u = reg.ReplaceAllString(u, "git://github.com/")
 						return url.Parse(u)
 					}
 
