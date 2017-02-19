@@ -73,13 +73,17 @@ func (c *AddCommand) Run() error {
 			results := d.GetResultStream()
 			go d.Start()
 
-			dependencies := []string{}
+			dependencyNames := []string{}
 			// Finally we collect all the results of the work.
 			for v := range results {
-				dependencies = append(dependencies, v.Package.Name)
+				if v.Package.Name == p.Name {
+					continue
+				}
+				dependencies = append(dependencies, v.Package)
+				dependencyNames = append(dependencyNames, v.Package.Name)
 			}
 
-			c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencies), c.Package, pUrl, strings.Join(dependencies, ", "))
+			c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), c.Package, pUrl, strings.Join(dependencyNames, ", "))
 		}
 
 		// Download package incl. dependencies concurrent
