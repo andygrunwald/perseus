@@ -13,18 +13,6 @@ type Medusa struct {
 	config Provider
 }
 
-var (
-	// NoRepositoriesError reflects an own error dedicated to the situation
-	// that there are no repositories configured / defined.
-	NoRepositoriesError = errors.New("No repositories defined/configured.")
-)
-
-// IsNoRepositories returns a boolean indicating whether the error is known to report
-// that there are no repositories.
-func IsNoRepositories(err error) bool {
-	return err == NoRepositoriesError
-}
-
 // NewMedusa will create a new medusa configuration object.
 // If no configuration is given, an error will be returned.
 func NewMedusa(c Provider) (*Medusa, error) {
