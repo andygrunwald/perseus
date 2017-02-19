@@ -73,11 +73,18 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}
 
+	// Determine number of concurrent workers
+	nOfWorkers, err := cmd.Flags().GetInt("numOfWorkers")
+	if err != nil {
+		return fmt.Errorf("Couldn't determine number of concurrent workers. Please control the 'numOfWorkers' flag. Error message: %s\n", err)
+	}
+
 	l.Println("Running \"mirror\" command")
 	// Setup command and run it
 	c := &commands.MirrorCommand{
-		Config: m,
-		Log:    l,
+		Config:      m,
+		Log:         l,
+		NumOfWorker: nOfWorkers,
 	}
 	err = c.Run()
 	if err != nil {

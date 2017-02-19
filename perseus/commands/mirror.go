@@ -16,6 +16,8 @@ type MirrorCommand struct {
 	Config *config.Medusa
 	// Log represents a logger to log messages
 	Log *log.Logger
+	// NumOfWorker is the number of worker used for concurrent actions (like resolving the dependency tree)
+	NumOfWorker int
 }
 
 // Run is the business logic of MirrorCommand.
@@ -24,8 +26,11 @@ func (c *MirrorCommand) Run() error {
 
 	repos, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
-		// TODO Define own error type and handle it here
-		c.Log.Println(err)
+		if config.IsNoRepositories(err) {
+			c.Log.Printf("Config: %s", err)
+		} else {
+			c.Log.Println(err)
+		}
 	}
 
 	pUrl := "https://packagist.org/"
@@ -39,15 +44,9 @@ func (c *MirrorCommand) Run() error {
 			return err
 		}
 
-		// TODO Okay, here we don't take error handling serious.
-		//	Why? Easy. If an API request fails, we don't know it.
-		//	Why? Easy. Which packages will be skipped? e.g. "php" ?
-		//	We really have to refactor this. Checkout the articles / links
-		//	That are mentioned IN the dependency resolver comments
-		//	But you know. 1. Make it work. 2. Make it fast. 3. Make it beautiful
-		// 	And this works for now.
-		// TODO Make number of worker configurable
-		d, err := perseus.NewDependencyResolver(v, 3, packagistClient)
+		// Lets get a dependency resolver.
+		// If we can't bootstrap one, we are lost anyway.
+		d, err := perseus.NewDependencyResolver(v, c.NumOfWorker, packagistClient)
 		if err != nil {
 			return err
 		}

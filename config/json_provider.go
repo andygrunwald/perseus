@@ -29,8 +29,12 @@ func (p *JSONProvider) Get(key string) interface{} {
 
 // GetStringSlice returns the value associated with the key as a slice of strings.
 func (p *JSONProvider) GetStringSlice(key string) []string {
-	// TODO Implement
-	return []string{}
+	var l []string
+	if v, ok := p.content[key]; ok {
+		json.Unmarshal(*v, &l)
+	}
+
+	return l
 }
 
 // GetContentMap returns the complete content of the provider data source as a map
@@ -46,10 +50,12 @@ func (p *JSONProvider) GetContentMap() map[string]interface{} {
 func (p *JSONProvider) GetString(key string) string {
 	var s string
 
-	// Yep. We skip error handling here. Dirty? Yep.
-	// Alternative? Break the interface.
-	// In an error case we will return an empty string here.
-	// TODO extend GetString with an error
-	json.Unmarshal(*p.content[key], &s)
+	// We check if the key exists.
+	// If we wouldn't do it and it would fail with SIGSEGV (invalid memory access).
+	// Instead we just return an empty string.
+	if v, ok := p.content[key]; ok {
+		json.Unmarshal(*v, &s)
+	}
+
 	return s
 }

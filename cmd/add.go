@@ -91,6 +91,12 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't create medusa configuration object: %s\n", err)
 	}
 
+	// Determine number of concurrent workers
+	nOfWorkers, err := cmd.Flags().GetInt("numOfWorkers")
+	if err != nil {
+		return fmt.Errorf("Couldn't determine number of concurrent workers. Please control the 'numOfWorkers' flag. Error message: %s\n", err)
+	}
+
 	l.Printf("Running \"add\" command for package \"%s\"", packet)
 	// Setup command and run it
 	c := &commands.AddCommand{
@@ -98,6 +104,7 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		WithDependencies: withDepsFlag,
 		Config:           m,
 		Log:              l,
+		NumOfWorker:      nOfWorkers,
 	}
 	err = c.Run()
 	if err != nil {

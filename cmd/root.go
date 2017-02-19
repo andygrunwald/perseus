@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -10,6 +11,9 @@ import (
 
 // cfgFile contains the path and name of the configuration file.
 var cfgFile string
+
+// numOfWorkers reflects the number of workers used for concurrent processes
+var numOfWorkers int
 
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
@@ -40,6 +44,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "medusa.json", "Medusa configuration file")
+	RootCmd.PersistentFlags().IntVar(&numOfWorkers, "numOfWorkers", runtime.GOMAXPROCS(0), "Number of worker used for concurrent operations (e.g. resolving a dependency tree or downloads)")
 }
 
 // initConfig reads in config file and ENV variables if set.
