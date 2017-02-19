@@ -13,17 +13,14 @@ type Set struct {
 // Add will add the provided items to the set.
 func (set *Set) Add(item string) {
 	set.lock.Lock()
-	defer set.lock.Unlock()
-
 	set.items[item] = true
+	set.lock.Unlock()
 }
 
 // Exists returns a bool indicating if the given item exists in the set.
 func (set *Set) Exists(item string) bool {
 	set.lock.RLock()
-
 	_, ok := set.items[item]
-
 	set.lock.RUnlock()
 
 	return ok

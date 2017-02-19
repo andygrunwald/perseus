@@ -160,7 +160,6 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 
 			// Handle dependency per dependency
 			for dependency, _ := range version.Require {
-				// TODO Add a global check via Set is it a member
 				// We check if this dependency was already queued.
 				// It is typical that many different versions of one package don't
 				// change dependencies so often. So we would queue one package
@@ -221,32 +220,12 @@ func (d *PackagistDependencyResolver) markAsQueued(p string) {
 // False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
 	return d.resolved.Exists(p)
-	/*
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	for _, b := range d.resolved {
-		if b == p {
-			return true
-		}
-	}
-	return false
-	*/
 }
 
 // isPackageAlreadyQueued returns true if package p was already queued.
 // False otherwise.
 func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
 	return d.queued.Exists(p)
-	/*
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	for _, b := range d.queued {
-		if b == p {
-			return true
-		}
-	}
-	return false
-	*/
 }
 
 // shouldPackageBeQueued will return true if package p should be queued.
