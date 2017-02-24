@@ -1,11 +1,11 @@
 package config_test
 
 import (
-	"testing"
-	. "github.com/andygrunwald/perseus/config"
 	"bytes"
 	"encoding/json"
+	. "github.com/andygrunwald/perseus/config"
 	"reflect"
+	"testing"
 )
 
 func unitTestJSONContent() []byte {

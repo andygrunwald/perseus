@@ -78,14 +78,14 @@ func (c *UpdateCommand) worker(id int, jobs <-chan string, results chan<- update
 	for j := range jobs {
 		updateClient, err := downloader.NewGitUpdater()
 		if err != nil {
-			results <- updateResult{Path:j, Err:fmt.Errorf("Updater client creation failed for package %s: %s", j, err)}
+			results <- updateResult{Path: j, Err: fmt.Errorf("Updater client creation failed for package %s: %s", j, err)}
 			continue
 		}
 		err = updateClient.Update(j)
 		if err != nil {
-			results <- updateResult{Path:j, Err:err}
+			results <- updateResult{Path: j, Err: err}
 		} else {
-			results <- updateResult{Path:j, Err:nil}
+			results <- updateResult{Path: j, Err: nil}
 		}
 	}
 }

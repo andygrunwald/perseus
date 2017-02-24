@@ -86,9 +86,9 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	l.Println("Running \"update\" command")
 	// Setup command and run it
 	c := &commands.UpdateCommand{
-		Config: m,
-		Log:    l,
-		NumOfWorker:      nOfWorkers,
+		Config:      m,
+		Log:         l,
+		NumOfWorker: nOfWorkers,
 	}
 	err = c.Run()
 	if err != nil {

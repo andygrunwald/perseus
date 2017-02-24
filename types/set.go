@@ -6,8 +6,8 @@ import (
 
 // Set is an implementation of ISet using the builtin map type. Set is threadsafe.
 type Set struct {
-	items     map[string]bool
-	lock      sync.RWMutex
+	items map[string]bool
+	lock  sync.RWMutex
 }
 
 // Add will add the provided items to the set.

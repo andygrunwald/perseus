@@ -200,9 +200,9 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 func (d *PackagistDependencyResolver) markAsResolved(p string) {
 	d.resolved.Add(p)
 	/*
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	d.resolved = append(d.resolved, p)
+		d.lock.Lock()
+		defer d.lock.Unlock()
+		d.resolved = append(d.resolved, p)
 	*/
 }
 
@@ -210,9 +210,9 @@ func (d *PackagistDependencyResolver) markAsResolved(p string) {
 func (d *PackagistDependencyResolver) markAsQueued(p string) {
 	d.queued.Add(p)
 	/*
-	d.lock.Lock()
-	defer d.lock.Unlock()
-	d.queued = append(d.queued, p)
+		d.lock.Lock()
+		defer d.lock.Unlock()
+		d.queued = append(d.queued, p)
 	*/
 }
 
