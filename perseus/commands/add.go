@@ -114,6 +114,12 @@ func (c *AddCommand) Run() error {
 		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(p.Name))
 	}
 
+	err = c.writeSatisConfig(satisRepositories...)
+
+	return nil
+}
+
+func (c *AddCommand) writeSatisConfig(satisRepositories ...string) error {
 	// Write Satis file
 	satisConfig := c.Config.GetString("satisconfig")
 	if len(satisConfig) == 0 {
@@ -143,7 +149,6 @@ func (c *AddCommand) Run() error {
 	}
 
 	c.Log.Printf("Satis configuration successful written to %s", satisConfig)
-
 	return nil
 }
 
