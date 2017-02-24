@@ -5,7 +5,9 @@ import (
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/types"
 	"log"
+	"strings"
 )
 
 // MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
@@ -24,7 +26,7 @@ type MirrorCommand struct {
 func (c *MirrorCommand) Run() error {
 	// TODO Make me concurrent
 
-	repos, err := c.Config.GetNamesOfRepositories()
+	repoList, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
 		if config.IsNoRepositories(err) {
 			c.Log.Printf("Config: %s", err)
@@ -33,12 +35,18 @@ func (c *MirrorCommand) Run() error {
 		}
 	}
 
+	repos := types.NewSet(repoList...)
+
+	// TODO Make me way faster. We do a lot of duplicate work here like
+	// init a new packagist client every time, a new dependency resolver every time
+	// booting up new channels, etc.
+	// Why not applying here the worker principle again?
+
 	pUrl := "https://packagist.org/"
 	require := c.Config.GetRequire()
 	for _, v := range require {
 
 		c.Log.Printf("Loading dependencies for package \"%s\" from %s", v, pUrl)
-
 		packagistClient, err := packagist.New(pUrl, nil)
 		if err != nil {
 			return err
@@ -53,21 +61,27 @@ func (c *MirrorCommand) Run() error {
 		results := d.GetResultStream()
 		go d.Start()
 
-		dependencies := []string{}
+		dependencyNames := []string{}
 		// Finally we collect all the results of the work.
-		for v := range results {
-			dependencies = append(dependencies, v.Package.Name)
+		for r := range results {
+			if r.Package.Name == v {
+				continue
+			}
+			repos.Add(r.Package.Name)
+			dependencyNames = append(dependencyNames, r.Package.Name)
 		}
 
-		// TODO List all deps here instead of the number
-		c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), v, pUrl)
-
-		for _, p := range dependencies {
-			repos = append(repos, p)
+		if l := len(dependencyNames); l == 0 {
+			c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencyNames), v, pUrl)
+		} else {
+			c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), v, pUrl, strings.Join(dependencyNames, ", "))
 		}
 	}
 
-	fmt.Printf("%+v\n", repos)
+	// Current results
+	// Found 163 entries: [psr/container jms/di-extra-bundle react/promise
+
+	fmt.Printf("Found %d entries: %+v\n", repos.Len(), repos.Flatten())
 
 	fmt.Println("Called: func(c *MirrorCommand) Run()")
 	panic("Not implemented yet: bin/medusa mirror [config]")
