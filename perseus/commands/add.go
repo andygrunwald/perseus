@@ -83,7 +83,11 @@ func (c *AddCommand) Run() error {
 				dependencyNames = append(dependencyNames, v.Package.Name)
 			}
 
-			c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), c.Package, pUrl, strings.Join(dependencyNames, ", "))
+			if l := len(dependencyNames); l == 0 {
+				c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencyNames), c.Package, pUrl)
+			} else {
+				c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), c.Package, pUrl, strings.Join(dependencyNames, ", "))
+			}
 		}
 
 		// Download package incl. dependencies concurrent
