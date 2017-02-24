@@ -29,8 +29,13 @@ func (c *UpdateCommand) Run() error {
 		fmt.Errorf("Error while determining folders for updating: %s", err)
 	}
 
-	// TODO Make me concurrent
+	// If no repositories were found, we will exit here
+	if len(matches) == 0 {
+		c.Log.Printf("No repositories found in %s", p)
+		return nil
+	}
 
+	// TODO Make me concurrent
 	for _, v := range matches {
 		updateClient, err := downloader.NewGitUpdater()
 		if err != nil {
@@ -42,6 +47,7 @@ func (c *UpdateCommand) Run() error {
 		} else {
 			c.Log.Printf("Update of %s successful", v)
 		}
+
 	}
 
 	return nil
