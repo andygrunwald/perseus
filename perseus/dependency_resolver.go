@@ -13,6 +13,7 @@ import (
 type DependencyResolver interface {
 	Start()
 	GetResultStream() <-chan *Result
+	SetPackage(name string)
 }
 
 // PackagistDependencyResolver is an implementation of DependencyResolver
@@ -72,6 +73,24 @@ func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiC
 	}
 
 	return d, nil
+}
+
+// SetPackage will set a new package and overwrite the package which was set during NewDependencyResolver.
+// After this the dependency resolver will be resetted
+func (d *PackagistDependencyResolver) SetPackage(name string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	d.Package = name
+	d.reset()
+}
+
+// Reset resets the internal state of the dependency resolver
+func (d *PackagistDependencyResolver) reset() {
+	d.queue = make(chan *Package, 4)
+	d.results = make(chan *Result)
+	d.resolved.Clear()
+	d.queued.Clear()
 }
 
 // GetResultStream will return the results stream.
@@ -199,21 +218,11 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 // markAsResolved will mark package p as resolved.
 func (d *PackagistDependencyResolver) markAsResolved(p string) {
 	d.resolved.Add(p)
-	/*
-		d.lock.Lock()
-		defer d.lock.Unlock()
-		d.resolved = append(d.resolved, p)
-	*/
 }
 
 // markAsQueued will mark package p as queued.
 func (d *PackagistDependencyResolver) markAsQueued(p string) {
 	d.queued.Add(p)
-	/*
-		d.lock.Lock()
-		defer d.lock.Unlock()
-		d.queued = append(d.queued, p)
-	*/
 }
 
 // isPackageAlreadyResolved returns true if package p was already resolved.
