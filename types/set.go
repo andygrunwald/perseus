@@ -54,6 +54,13 @@ func (set *Set) Len() int64 {
 	return size
 }
 
+// Clear will remove all items from the set.
+func (set *Set) Clear() {
+	set.lock.Lock()
+	set.items = map[string]bool{}
+	set.lock.Unlock()
+}
+
 // New is the constructor for sets.  It will pull from a reuseable memory pool if it can.
 // Takes a list of items to initialize the set with.
 func NewSet(items ...string) *Set {
