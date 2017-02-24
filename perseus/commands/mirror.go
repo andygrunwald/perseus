@@ -79,7 +79,11 @@ func (c *MirrorCommand) Run() error {
 	}
 
 	// Current results
+
+	// 2017/02/24 20:58:17 Using configuration file /.../Go/src/github.com/andygrunwald/perseus/medusa.json
+	// 2017/02/24 20:58:45 11 dependencies found for pa....
 	// Found 163 entries: [psr/container jms/di-extra-bundle react/promise
+	// ./pers mirror  6.84s user 0.96s system 28% cpu 27.600 total
 
 	fmt.Printf("Found %d entries: %+v\n", repos.Len(), repos.Flatten())
 
