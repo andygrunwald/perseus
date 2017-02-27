@@ -126,7 +126,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 }
 
 func TestNewDependencyResolver(t *testing.T) {
-	d, err := NewDependencyResolver("symfony/console", 10, &testApiClient{})
+	d, err := NewDependencyResolver(10, &testApiClient{})
 	if err != nil {
 		t.Errorf("Error while creating a new dependency resolver: %s", err)
 	}
@@ -137,18 +137,16 @@ func TestNewDependencyResolver(t *testing.T) {
 
 func TestNewDependencyResolver_Error(t *testing.T) {
 	tests := []struct {
-		name            string
 		numOfWorker     int
 		packagistClient packagist.ApiClient
 	}{
-		{"", 5, &testApiClient{}},
-		{"twig/twig", 0, &testApiClient{}},
-		{"psr/log", 9, nil},
-		{"", 0, nil},
+		{0, &testApiClient{}},
+		{9, nil},
+		{0, nil},
 	}
 
 	for _, tt := range tests {
-		if got, err := NewDependencyResolver(tt.name, tt.numOfWorker, tt.packagistClient); err == nil {
+		if got, err := NewDependencyResolver(tt.numOfWorker, tt.packagistClient); err == nil {
 			t.Errorf("No error while creating a new dependency resolver. Got: %+v", got)
 		}
 	}
@@ -158,12 +156,13 @@ func TestNewDependencyResolver_Error(t *testing.T) {
 // It will start the dependency resolver for packageName
 func resolvePackages(t testError, packageName string) []*Result {
 	apiClient := &testApiClient{}
-	d, err := NewDependencyResolver(packageName, 3, apiClient)
+	d, err := NewDependencyResolver(3, apiClient)
 	if err != nil {
 		t.Errorf("Didn't expected an error. Got %s", err)
 	}
 	results := d.GetResultStream()
-	go d.Start()
+	p, _ := NewPackage(packageName)
+	go d.Resolve([]*Package{p})
 
 	r := []*Result{}
 	// Finally we collect all the results of the work.

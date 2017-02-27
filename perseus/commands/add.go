@@ -66,12 +66,15 @@ func (c *AddCommand) Run() error {
 
 			// Lets get a dependency resolver.
 			// If we can't bootstrap one, we are lost anyway.
-			d, err := perseus.NewDependencyResolver(p.Name, c.NumOfWorker, packagistClient)
+			// We set the queue length to the number of workers + 1. Why?
+			// With this every worker has work, when the queue is filled.
+			// During the add command, this is enough in most of the cases.
+			d, err := perseus.NewDependencyResolver(c.NumOfWorker, packagistClient)
 			if err != nil {
 				return err
 			}
 			results := d.GetResultStream()
-			go d.Start()
+			go d.Resolve([]*perseus.Package{p})
 
 			dependencyNames := []string{}
 			// Finally we collect all the results of the work.

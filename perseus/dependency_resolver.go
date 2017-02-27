@@ -11,16 +11,13 @@ import (
 
 // DependencyResolver is an interface to resolve package dependencies
 type DependencyResolver interface {
-	Start()
+	Resolve(packageList []*Package)
 	GetResultStream() <-chan *Result
-	SetPackage(name string)
 }
 
 // PackagistDependencyResolver is an implementation of DependencyResolver
 // that will resolve the dependencies of a package with the help of https://packagist.org/
 type PackagistDependencyResolver struct {
-	// Package contains the package name like "twig/twig" or "symfony/console"
-	Package string
 	// packagist is a Client to talk to a packagist instance
 	packagist packagist.ApiClient
 
@@ -48,10 +45,7 @@ type Result struct {
 
 // NewDependencyResolver will create a new instance of a DependencyResolver.
 // Standard implementation is the PackagistDependencyResolver.
-func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiClient) (DependencyResolver, error) {
-	if len(packageName) == 0 {
-		return nil, fmt.Errorf("No package name given.")
-	}
+func NewDependencyResolver(numOfWorker int, p packagist.ApiClient) (DependencyResolver, error) {
 	if numOfWorker == 0 {
 		return nil, fmt.Errorf("Starting a dependency resolver with zero worker is not possible")
 	}
@@ -63,34 +57,15 @@ func NewDependencyResolver(packageName string, numOfWorker int, p packagist.ApiC
 		workerCount: numOfWorker,
 		waitGroup:   sync.WaitGroup{},
 		lock:        sync.RWMutex{},
-		queue:       make(chan *Package, 4),
+		queue:       make(chan *Package, (numOfWorker + 1)),
 		results:     make(chan *Result),
 		resolved:    types.NewSet(),
 		queued:      types.NewSet(),
-		Package:     packageName,
 		packagist:   p,
 		replacee:    getReplaceeMap(),
 	}
 
 	return d, nil
-}
-
-// SetPackage will set a new package and overwrite the package which was set during NewDependencyResolver.
-// After this the dependency resolver will be resetted
-func (d *PackagistDependencyResolver) SetPackage(name string) {
-	d.lock.Lock()
-	defer d.lock.Unlock()
-
-	d.Package = name
-	d.reset()
-}
-
-// Reset resets the internal state of the dependency resolver
-func (d *PackagistDependencyResolver) reset() {
-	d.queue = make(chan *Package, 4)
-	d.results = make(chan *Result)
-	d.resolved.Clear()
-	d.queued.Clear()
 }
 
 // GetResultStream will return the results stream.
@@ -101,21 +76,31 @@ func (d *PackagistDependencyResolver) GetResultStream() <-chan *Result {
 }
 
 // Start will kick of the dependency resolver process.
-func (d *PackagistDependencyResolver) Start() {
-	// Boot up worker routines
-	for w := 1; w <= d.workerCount; w++ {
-		go d.worker(w, d.queue, d.results)
-	}
+func (d *PackagistDependencyResolver) Resolve(packageList []*Package) {
+	d.startWorker()
 
-	// Add the root package to the queue
-	d.waitGroup.Add(1)
-	p, _ := NewPackage(d.Package)
-	d.queue <- p
+	// Queue packages
+	for _, p := range packageList {
+		d.queuePackage(p)
+	}
 
 	// Wait until all packages are resolved and close everything
 	d.waitGroup.Wait()
 	close(d.queue)
 	close(d.results)
+}
+
+// QueuePackage adds package p to the queue
+func (d *PackagistDependencyResolver) queuePackage(p *Package) {
+	d.waitGroup.Add(1)
+	d.queue <- p
+}
+
+// startWorker will boot up worker routines
+func (d *PackagistDependencyResolver) startWorker() {
+	for w := 1; w <= d.workerCount; w++ {
+		go d.worker(w, d.queue, d.results)
+	}
 }
 
 // worker is a single worker routine. This worker will be launched multiple times to work on
@@ -225,18 +210,6 @@ func (d *PackagistDependencyResolver) markAsQueued(p string) {
 	d.queued.Add(p)
 }
 
-// isPackageAlreadyResolved returns true if package p was already resolved.
-// False otherwise.
-func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
-	return d.resolved.Exists(p)
-}
-
-// isPackageAlreadyQueued returns true if package p was already queued.
-// False otherwise.
-func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
-	return d.queued.Exists(p)
-}
-
 // shouldPackageBeQueued will return true if package p should be queued.
 // False otherwise.
 // A package should be queued if
@@ -257,6 +230,18 @@ func (d *PackagistDependencyResolver) shouldPackageBeQueued(p string) bool {
 	}
 
 	return true
+}
+
+// isPackageAlreadyResolved returns true if package p was already resolved.
+// False otherwise.
+func (d *PackagistDependencyResolver) isPackageAlreadyResolved(p string) bool {
+	return d.resolved.Exists(p)
+}
+
+// isPackageAlreadyQueued returns true if package p was already queued.
+// False otherwise.
+func (d *PackagistDependencyResolver) isPackageAlreadyQueued(p string) bool {
+	return d.queued.Exists(p)
 }
 
 // isSystemPackage returns true if p is a system package. False otherwise.
