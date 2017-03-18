@@ -25,7 +25,6 @@ Dependencies will be determined through API requests to packagist.org.
 `,
 	Example: `  perseus add "twig/twig"
   perseus add --width-deps "symfony/console"`,
-	// TODO Write a bash completion for the package arg. Checkout https://github.com/spf13/cobra/blob/master/bash_completions.md
 	ValidArgs: []string{"package", "config"},
 	RunE:      cmdAddRun,
 }

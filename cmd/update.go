@@ -26,7 +26,6 @@ Or you add the new package to the configuration and call the "mirror" command.
 The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
 Otherwise you would stuck with the version from the time you added the package.`,
 	Example: "  perseus update",
-	// TODO Write a bash completion for the package arg. Checkout https://github.com/spf13/cobra/blob/master/bash_completions.md
 	ValidArgs: []string{"config"},
 	RunE:      cmdUpdateRun,
 }

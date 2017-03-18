@@ -22,7 +22,6 @@ Dependencies will be only resolved from the packages entered in the require sect
 Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
 `,
 	Example: "  perseus mirror",
-	// TODO Write a bash completion for the package arg. Checkout https://github.com/spf13/cobra/blob/master/bash_completions.md
 	ValidArgs: []string{"config"},
 	RunE:      cmdMirrorRun,
 }
