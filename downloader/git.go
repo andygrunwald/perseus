@@ -4,10 +4,30 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 )
 
 type GitDownloader struct {
 	url string
+}
+
+// TODO We should think about it to make repositoryUrl a net/url.URL
+func NewGit(repositoryUrl string) (Downloader, error) {
+	reg, err := regexp.Compile("^git@github.com:")
+	if err != nil {
+		return nil, err
+	}
+
+	safeUrl := reg.ReplaceAllString(repositoryUrl, "git://github.com/")
+	client := &GitDownloader{
+		url: safeUrl,
+	}
+	return client, nil
+}
+
+func NewGitUpdater() (Updater, error) {
+	client := &GitDownloader{}
+	return client, nil
 }
 
 func (d *GitDownloader) Download(target string) error {
