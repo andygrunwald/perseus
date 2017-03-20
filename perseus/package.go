@@ -3,6 +3,7 @@ package perseus
 import (
 	"errors"
 	"net/url"
+	"regexp"
 )
 
 // Package represents a single package.
@@ -14,7 +15,7 @@ type Package struct {
 }
 
 // NewPackage will create a new Package
-func NewPackage(name string) (*Package, error) {
+func NewPackage(name, repository string) (*Package, error) {
 	if len(name) == 0 {
 		return nil, errors.New("NewPackage failed. Name attribute required. Empty string given.")
 	}
@@ -22,6 +23,23 @@ func NewPackage(name string) (*Package, error) {
 	p := &Package{
 		Name: name,
 	}
+
+	if len(repository) == 0 {
+		return p, nil
+	}
+
+	reg, err := regexp.Compile("^git@github.com:")
+	if err != nil {
+		return p, err
+	}
+
+	safeUrl := reg.ReplaceAllString(repository, "git://github.com/")
+	u, err := url.Parse(safeUrl)
+	if err != nil {
+		return p, err
+	}
+
+	p.Repository = u
 
 	return p, nil
 }

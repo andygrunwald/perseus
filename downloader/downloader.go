@@ -1,5 +1,14 @@
 package downloader
 
+import (
+	"io"
+
+	"github.com/andygrunwald/perseus/perseus"
+)
+
 type Downloader interface {
-	Download(target string) error
+	io.Closer
+
+	Download(packages []*perseus.Package)
+	GetResultStream() <-chan *Result
 }

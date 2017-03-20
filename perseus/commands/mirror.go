@@ -2,12 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"log"
+	"sync"
+
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
 	"github.com/andygrunwald/perseus/types"
-	"log"
-	"sync"
 )
 
 // MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
@@ -61,7 +62,7 @@ func (c *MirrorCommand) Run() error {
 	// Loop over the packages and add them
 	l := []*perseus.Package{}
 	for _, r := range require {
-		p, _ := perseus.NewPackage(r)
+		p, _ := perseus.NewPackage(r, "")
 		l = append(l, p)
 	}
 
@@ -83,43 +84,43 @@ func (c *MirrorCommand) Run() error {
 	panic("Not implemented yet: bin/medusa mirror [config]")
 
 	/*
-		No we have everything and we need to call the add command
+			No we have everything and we need to call the add command
 
-		$output->writeln('<info>Create mirror repositories</info>');
+			$output->writeln('<info>Create mirror repositories</info>');
 
-	        foreach ($repos as $repo) {
-	            $command = $this->getApplication()->find('add');
+		        foreach ($repos as $repo) {
+		            $command = $this->getApplication()->find('add');
 
-	            $arguments = array(
-	                'command'     => 'add',
-	                'package'     => $repo,
-	                'config'      => $medusaConfig,
-	            );
+		            $arguments = array(
+		                'command'     => 'add',
+		                'package'     => $repo,
+		                'config'      => $medusaConfig,
+		            );
 
-	            $input = new ArrayInput($arguments);
-	            $returnCode = $command->run($input, $output);
-	        }
+		            $input = new ArrayInput($arguments);
+		            $returnCode = $command->run($input, $output);
+		        }
 
-	// TODO IMPLEMENT MirrorCommand
-	// TODO And make satis write file at the end
-	// TODO and make a worker / queue implementation
+		// TODO IMPLEMENT MirrorCommand
+		// TODO And make satis write file at the end
+		// TODO and make a worker / queue implementation
 
-	// Okay, now it gets wired, but we will call the Add command for every package.
-	//
-	for _, packet := range repos.Flatten() {
-		c := &AddCommand{
-			Package:          packet,
-			// We don't need dependencies here, because we had resolved them already
-			WithDependencies: false,
-			Config:           c.Config,
-			Log:              c.Log,
-			NumOfWorker:      c.NumOfWorker,
+		// Okay, now it gets wired, but we will call the Add command for every package.
+		//
+		for _, packet := range repos.Flatten() {
+			c := &AddCommand{
+				Package:          packet,
+				// We don't need dependencies here, because we had resolved them already
+				WithDependencies: false,
+				Config:           c.Config,
+				Log:              c.Log,
+				NumOfWorker:      c.NumOfWorker,
+			}
+			err = c.Run()
+			if err != nil {
+				return fmt.Errorf("Error during execution of \"add\" command: %s\n", err)
+			}
 		}
-		err = c.Run()
-		if err != nil {
-			return fmt.Errorf("Error during execution of \"add\" command: %s\n", err)
-		}
-	}
-*/
+	*/
 	return nil
 }

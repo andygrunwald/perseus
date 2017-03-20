@@ -25,7 +25,7 @@ Or you add the new package to the configuration and call the "mirror" command.
 
 The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
 Otherwise you would stuck with the version from the time you added the package.`,
-	Example: "  perseus update",
+	Example:   "  perseus update",
 	ValidArgs: []string{"config"},
 	RunE:      cmdUpdateRun,
 }

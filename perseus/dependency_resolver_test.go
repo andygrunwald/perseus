@@ -1,10 +1,10 @@
 package perseus_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
-	"fmt"
 	"github.com/andygrunwald/perseus/packagist"
 	. "github.com/andygrunwald/perseus/perseus"
 )
@@ -161,7 +161,7 @@ func resolvePackages(t testError, packageName string) []*Result {
 		t.Errorf("Didn't expected an error. Got %s", err)
 	}
 	results := d.GetResultStream()
-	p, _ := NewPackage(packageName)
+	p, _ := NewPackage(packageName, "")
 	go d.Resolve([]*Package{p})
 
 	r := []*Result{}
