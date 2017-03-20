@@ -38,7 +38,7 @@ func (c *MirrorCommand) Run() error {
 		}
 	}
 
-	repos := types.NewSet(repoList...)
+	repos := types.NewSet(repoList)
 
 	require := c.Config.GetRequire()
 
