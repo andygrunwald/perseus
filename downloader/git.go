@@ -99,7 +99,7 @@ func (d *GitDownloader) updateServerInfo(target string) error {
 }
 
 func (d *GitDownloader) fetch(target string) error {
-	cmd := exec.Command("git", "fetch")
+	cmd := exec.Command("git", "fetch", "--prune")
 	cmd.Dir = target
 	stdOut, err := cmd.Output()
 	if err != nil {
