@@ -105,11 +105,6 @@ func (c *AddCommand) Run() error {
 		downloadablePackages = append(downloadablePackages, p)
 	}
 
-	// TODO What happens if Packagist rewrite the package? E.g. the facebook example? We should output here both names
-	// TODO: downloadPackage will write to p (name + Repository url), we should test this with a package that is deprecated.
-	// Afaik Packagist will forward you to the new one.
-	// Facebook SDK is one of those
-
 	// Okay, we have everything done here.
 	// Resolved the dependencies (or not) and collected the packages.
 	// I would say we can start with downloading them ....
@@ -210,7 +205,6 @@ func (c *AddCommand) getURLOfPackageFromPackagist(p *perseus.Package) (*perseus.
 
 	// Check if URL is empty
 	if len(packagistPackage.Repository) == 0 {
-		// TODO What happens if Packagist rewrite the package? E.g. the facebook example? We should output here both names
 		return p, fmt.Errorf("Received empty URL for package %s from Packagist", p.Name)
 	}
 
