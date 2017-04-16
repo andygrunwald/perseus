@@ -55,7 +55,7 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 					// Check if the url is empty
 					if u := v.(string); len(u) > 0 {
 
-						// Sanite URL
+						// Sanitize URL
 						// Not the best part here, i know
 						reg, err := regexp.Compile("^git@github.com:")
 						if err != nil {
