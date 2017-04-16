@@ -24,7 +24,7 @@ When "with-deps" is given, dependencies of the package will be mirrored as well.
 Dependencies will be determined through API requests to packagist.org.
 `,
 	Example: `  perseus add "twig/twig"
-  perseus add --width-deps "symfony/console"`,
+  perseus add --with-deps "symfony/console"`,
 	ValidArgs: []string{"package", "config"},
 	RunE:      cmdAddRun,
 }
