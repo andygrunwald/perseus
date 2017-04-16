@@ -33,7 +33,6 @@ type packageResponse struct {
 type Package struct {
 	// Name of the package
 	Name string `json:"name"`
-	// TODO Should be a net/url.URL (with the UnmashalJSON(b []byte) error interface)
 	// Repository URL of the Package
 	Repository string `json:"repository"`
 	// Available and released versions of this package
