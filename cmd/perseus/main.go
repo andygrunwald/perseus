@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/andygrunwald/perseus/cmd"
+	"github.com/andygrunwald/perseus/commands"
 )
 
 func main() {
 	// CLI interface of perseus
-	cmd.Execute()
+	commands.Execute()
 }
