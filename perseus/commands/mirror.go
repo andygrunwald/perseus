@@ -123,7 +123,6 @@ func (c *MirrorCommand) Run() error {
 
 	// And as a final step, write the satis configuration
 	err = c.writeSatisConfig(satisRepositories...)
-
 	return err
 }
 

@@ -44,7 +44,7 @@ type SatisRepository struct {
 // If no configuration is given, an error will be returned.
 func NewSatis(c Provider) (*Satis, error) {
 	if c == nil {
-		return nil, errors.New("No conifguration provider applied")
+		return nil, errors.New("No configurations provider applied")
 	}
 
 	// Read initial repositories

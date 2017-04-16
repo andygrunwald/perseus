@@ -138,8 +138,7 @@ func (c *AddCommand) Run() error {
 
 	// And as a final step, write the satis configuration
 	err = c.writeSatisConfig(satisRepositories...)
-
-	return nil
+	return err
 }
 
 func (c *AddCommand) writeSatisConfig(satisRepositories ...string) error {

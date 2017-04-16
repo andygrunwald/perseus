@@ -173,7 +173,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 
 					packageToResolve, _ := NewPackage(dependency, "")
 					// We add two additional waitgroup entries here.
-					// You might ask why? Reguarly we add a new entry when we have a new package.
+					// You might ask why? Regularly we add a new entry when we have a new package.
 					// Here we add two, because of a) the new package and b) the new queue
 					// entry of the package. We queue the package in a new go routine to
 					// avoid a blocking state here. But we need to know when this go routine
