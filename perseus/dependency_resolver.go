@@ -171,7 +171,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 				if d.shouldPackageBeQueued(dependency) {
 					d.markAsQueued(dependency)
 
-					packageToResolve, _ := NewPackage(dependency)
+					packageToResolve, _ := NewPackage(dependency, "")
 					// We add two additional waitgroup entries here.
 					// You might ask why? Reguarly we add a new entry when we have a new package.
 					// Here we add two, because of a) the new package and b) the new queue
@@ -189,10 +189,10 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 		}
 
 		// Package was resolved. Lets do everything which is necessary to change this package to a result.
-		resolvedPackage, _ := NewPackage(p.Name)
+		resolvedPackage, err := NewPackage(p.Name, p.Repository)
 		r := &Result{
 			Package: resolvedPackage,
-			Error:   nil,
+			Error:   err,
 		}
 		results <- r
 		d.waitGroup.Done()

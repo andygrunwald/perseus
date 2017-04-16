@@ -39,12 +39,13 @@ type downloadResult struct {
 
 // Run is the business logic of AddCommand.
 func (c *AddCommand) Run() error {
-	p, err := perseus.NewPackage(c.Package)
+	p, err := perseus.NewPackage(c.Package, "")
 	if err != nil {
 		return err
 	}
 
 	var satisRepositories []string
+	downloadablePackages := []*perseus.Package{}
 
 	// We don't respect the error here.
 	// OH: "WTF? Why? You claim 'Serious error handling' in the README!"
@@ -55,7 +56,7 @@ func (c *AddCommand) Run() error {
 	p.Repository, _ = c.Config.GetRepositoryURLOfPackage(p)
 	if p.Repository == nil {
 
-		dependencies := []*perseus.Package{p}
+		// Check if we should load the dependency also
 		if c.WithDependencies {
 			pUrl := "https://packagist.org/"
 			c.Log.Printf("Loading dependencies for package \"%s\" from %s", c.Package, pUrl)
@@ -79,10 +80,7 @@ func (c *AddCommand) Run() error {
 			dependencyNames := []string{}
 			// Finally we collect all the results of the work.
 			for v := range results {
-				if v.Package.Name == p.Name {
-					continue
-				}
-				dependencies = append(dependencies, v.Package)
+				downloadablePackages = append(downloadablePackages, v.Package)
 				dependencyNames = append(dependencyNames, v.Package.Name)
 			}
 
@@ -91,36 +89,59 @@ func (c *AddCommand) Run() error {
 			} else {
 				c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), c.Package, pUrl, strings.Join(dependencyNames, ", "))
 			}
+
+		} else {
+			// It seems to be that we don't have an URL for the package
+			// Lets ask packagist for it
+			p, err = c.getURLOfPackageFromPackagist(p)
+			if err != nil {
+				return err
+			}
+			downloadablePackages = append(downloadablePackages, p)
 		}
-
-		// Download package incl. dependencies concurrent
-		dependencyCount := len(dependencies)
-		downloadsChan := make(chan downloadResult, dependencyCount)
-		defer close(downloadsChan)
-		c.startConcurrentDownloads(dependencies, downloadsChan)
-
-		// Check which dependencies where download successful and which not
-		satisRepositories = c.processFinishedDownloads(downloadsChan, dependencyCount)
 
 	} else {
 		c.Log.Printf("Mirroring of package \"%s\" from repository \"%s\" started", p.Name, p.Repository)
-		// TODO: downloadPackage will write to p (name + Repository url), we should test this with a package that is deprecated.
-		// Afaik Packagist will forward you to the new one.
-		// Facebook SDK is one of those
-		err := c.downloadPackage(p)
-		if err != nil {
-			if os.IsExist(err) {
-				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", p.Name)
-			} else {
-				return err
-			}
-		} else {
-			c.Log.Printf("Mirroring of package \"%s\" successful", p.Name)
-		}
-
-		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(p.Name))
+		downloadablePackages = append(downloadablePackages, p)
 	}
 
+	// TODO What happens if Packagist rewrite the package? E.g. the facebook example? We should output here both names
+	// TODO: downloadPackage will write to p (name + Repository url), we should test this with a package that is deprecated.
+	// Afaik Packagist will forward you to the new one.
+	// Facebook SDK is one of those
+
+	// Okay, we have everything done here.
+	// Resolved the dependencies (or not) and collected the packages.
+	// I would say we can start with downloading them ....
+	// Why we are talking? Lets do it!
+	c.Log.Printf("Start concurrent download process for %d packages with %d worker", len(downloadablePackages), c.NumOfWorker)
+	d, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
+	if err != nil {
+		return err
+	}
+
+	results := d.GetResultStream()
+	d.Download(downloadablePackages)
+
+	for i := 1; i <= len(downloadablePackages); i++ {
+		v := <-results
+		if v.Error != nil {
+			if os.IsExist(v.Error) {
+				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", v.Package.Name)
+			} else {
+				c.Log.Printf("Error while mirroring package \"%s\": %s", v.Package.Name, v.Error)
+				// If we have an error, we don't need to add it to satis repositories
+				continue
+			}
+		} else {
+			c.Log.Printf("Mirroring of package \"%s\" successful", v.Package.Name)
+		}
+
+		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(v.Package.Name))
+	}
+	d.Close()
+
+	// And as a final step, write the satis configuration
 	err = c.writeSatisConfig(satisRepositories...)
 
 	return nil
@@ -176,82 +197,30 @@ func (c *AddCommand) getLocalUrlForRepository(p string) string {
 	return r
 }
 
-func (c *AddCommand) downloadPackage(p *perseus.Package) error {
-	repoDir := c.Config.GetString("repodir")
-	// TODO Path traversal in p.Name possible?
-	targetDir := fmt.Sprintf("%s/%s.git", repoDir, p.Name)
-
-	// Does targetDir already exist?
-	if _, err := os.Stat(targetDir); err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-	} else {
-		return os.ErrExist
-	}
-
-	if p.Repository == nil {
-		packagistClient, err := packagist.New("https://packagist.org/", nil)
-		if err != nil {
-			return fmt.Errorf("Packagist client creation failed: %s", err)
-		}
-		packagistPackage, resp, err := packagistClient.GetPackage(p.Name)
-		if err != nil {
-			return fmt.Errorf("Failed to retrieve information about package \"%s\" from Packagist. Called %s. Error: %s", p.Name, resp.Request.URL.String(), err)
-		}
-
-		// Check if URL is empty
-		if len(packagistPackage.Repository) == 0 {
-			// TODO What happens if Packagist rewrite the package? E.g. the facebook example? We should output here both names
-			return fmt.Errorf("Received empty URL for package %s from Packagist", p.Name)
-		}
-
-		// Overwriting values from Packagist
-		p.Name = packagistPackage.Name
-		u, err := url.Parse(packagistPackage.Repository)
-		if err != nil {
-			return fmt.Errorf("URL conversion of %s to a net/url.URL object failed: %s", packagistPackage.Repository, err)
-		}
-		p.Repository = u
-	}
-
-	downloadClient, err := downloader.NewGit(p.Repository.String())
+func (c *AddCommand) getURLOfPackageFromPackagist(p *perseus.Package) (*perseus.Package, error) {
+	packagistClient, err := packagist.New("https://packagist.org/", nil)
 	if err != nil {
-		return fmt.Errorf("Downloader client creation failed for package %s: %s", p.Name, err)
-	}
-	return downloadClient.Download(targetDir)
-}
-
-func (c *AddCommand) startConcurrentDownloads(dependencies []*perseus.Package, downloadChan chan<- downloadResult) {
-	// Loop over all dependencies and download them concurrent
-	for _, packet := range dependencies {
-		c.Log.Printf("Mirroring of package \"%s\" started", packet.Name)
-
-		go func(singlePacket *perseus.Package, ch chan<- downloadResult) {
-			err := c.downloadPackage(singlePacket)
-			ch <- downloadResult{
-				Package: singlePacket.Name,
-				Error:   err,
-			}
-		}(packet, downloadChan)
-	}
-}
-
-func (c *AddCommand) processFinishedDownloads(ch <-chan downloadResult, dependencyCount int) []string {
-	var success []string
-	for i := 0; i < dependencyCount; i++ {
-		download := <-ch
-		if download.Error == nil {
-			c.Log.Printf("Mirroring of package \"%s\" successful", download.Package)
-			success = append(success, c.getLocalUrlForRepository(download.Package))
-		} else {
-			if os.IsExist(download.Error) {
-				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", download.Package)
-			} else {
-				c.Log.Printf("Error while mirroring package \"%s\": %s", download.Package, download.Error)
-			}
-		}
+		return p, fmt.Errorf("Packagist client creation failed: %s", err)
 	}
 
-	return success
+	packagistPackage, resp, err := packagistClient.GetPackage(p.Name)
+	if err != nil {
+		return p, fmt.Errorf("Failed to retrieve information about package \"%s\" from Packagist. Called %s. Error: %s", p.Name, resp.Request.URL.String(), err)
+	}
+
+	// Check if URL is empty
+	if len(packagistPackage.Repository) == 0 {
+		// TODO What happens if Packagist rewrite the package? E.g. the facebook example? We should output here both names
+		return p, fmt.Errorf("Received empty URL for package %s from Packagist", p.Name)
+	}
+
+	// Overwriting values from Packagist
+	p.Name = packagistPackage.Name
+	u, err := url.Parse(packagistPackage.Repository)
+	if err != nil {
+		return p, fmt.Errorf("URL conversion of %s to a net/url.URL object failed: %s", packagistPackage.Repository, err)
+	}
+	p.Repository = u
+
+	return p, nil
 }

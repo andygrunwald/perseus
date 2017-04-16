@@ -21,7 +21,7 @@ Both package lists form the configuration file (repositories and require) will b
 Dependencies will be only resolved from the packages entered in the require section.
 Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
 `,
-	Example: "  perseus mirror",
+	Example:   "  perseus mirror",
 	ValidArgs: []string{"config"},
 	RunE:      cmdMirrorRun,
 }

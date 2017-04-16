@@ -18,7 +18,7 @@ func TestNewPackage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got, err := NewPackage(tt.name); reflect.DeepEqual(got, tt.want) == false {
+		if got, err := NewPackage(tt.name, ""); reflect.DeepEqual(got, tt.want) == false {
 			t.Errorf("NewPackage(%s) = %+v; want %+v. Error: %s", tt.name, got, tt.want, err)
 		}
 	}

@@ -1,28 +1,14 @@
 package downloader
 
 import (
-	"regexp"
+	"io"
+
+	"github.com/andygrunwald/perseus/perseus"
 )
 
 type Downloader interface {
-	Download(target string) error
-}
+	io.Closer
 
-// TODO We should think about it to make repositoryUrl a net/url.URL
-func NewGit(repositoryUrl string) (Downloader, error) {
-	reg, err := regexp.Compile("^git@github.com:")
-	if err != nil {
-		return nil, err
-	}
-
-	safeUrl := reg.ReplaceAllString(repositoryUrl, "git://github.com/")
-	client := &GitDownloader{
-		url: safeUrl,
-	}
-	return client, nil
-}
-
-func NewGitUpdater() (Updater, error) {
-	client := &GitDownloader{}
-	return client, nil
+	Download(packages []*perseus.Package)
+	GetResultStream() <-chan *Result
 }

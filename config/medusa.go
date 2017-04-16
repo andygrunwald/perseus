@@ -39,12 +39,12 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	// Lets wait for feedback.
 	repositories := m.config.Get("repositories")
 	if repositories == nil {
-		return nil, errors.New("No repositories configured.")
+		return nil, NoRepositoriesError
 	}
 
 	repositoriesSlice := repositories.([]interface{})
 	if len(repositoriesSlice) == 0 {
-		return nil, errors.New("No repositories configured.")
+		return nil, NoRepositoriesError
 	}
 
 	for _, repoEntry := range repositoriesSlice {
@@ -74,7 +74,7 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	return nil, fmt.Errorf("No repository url found for package %s", p.Name)
 }
 
-func (m *Medusa) GetNamesOfRepositories() ([]string, error) {
+func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
 	repositories := m.config.Get("repositories")
 	if repositories == nil {
 		return nil, NoRepositoriesError
@@ -85,11 +85,21 @@ func (m *Medusa) GetNamesOfRepositories() ([]string, error) {
 		return nil, NoRepositoriesError
 	}
 
-	r := make([]string, 0, len(repositoriesSlice))
+	r := []*perseus.Package{}
 	for _, repoEntry := range repositoriesSlice {
 		repoEntryMap := repoEntry.(map[string]interface{})
 		if val, ok := repoEntryMap["name"]; ok {
-			r = append(r, val.(string))
+			name := val.(string)
+
+			if v, ok := repoEntryMap["url"]; ok {
+				if u := v.(string); len(u) > 0 {
+					pack, err := perseus.NewPackage(name, u)
+					if err != nil {
+						continue
+					}
+					r = append(r, pack)
+				}
+			}
 		}
 	}
 

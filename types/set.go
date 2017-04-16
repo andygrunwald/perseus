@@ -8,29 +8,46 @@ var pool = sync.Pool{}
 
 // Set is an implementation of ISet using the builtin map type. Set is threadsafe.
 type Set struct {
-	items     map[string]bool
+	items     map[interface{}]struct{}
 	lock      sync.RWMutex
-	flattened []string
+	flattened []interface{}
 }
 
 // Add will add the provided items to the set.
-func (set *Set) Add(item string) {
+func (set *Set) Add(items ...interface{}) {
 	set.lock.Lock()
-	set.items[item] = true
-	set.lock.Unlock()
+	defer set.lock.Unlock()
+
+	set.flattened = nil
+	for _, item := range items {
+		set.items[item] = struct{}{}
+	}
+}
+
+// Remove will remove the given items from the set.
+func (set *Set) Remove(items ...interface{}) {
+	set.lock.Lock()
+	defer set.lock.Unlock()
+
+	set.flattened = nil
+	for _, item := range items {
+		delete(set.items, item)
+	}
 }
 
 // Exists returns a bool indicating if the given item exists in the set.
-func (set *Set) Exists(item string) bool {
+func (set *Set) Exists(item interface{}) bool {
 	set.lock.RLock()
+
 	_, ok := set.items[item]
+
 	set.lock.RUnlock()
 
 	return ok
 }
 
 // Flatten will return a list of the items in the set.
-func (set *Set) Flatten() []string {
+func (set *Set) Flatten() []interface{} {
 	set.lock.Lock()
 	defer set.lock.Unlock()
 
@@ -38,7 +55,7 @@ func (set *Set) Flatten() []string {
 		return set.flattened
 	}
 
-	set.flattened = make([]string, 0, len(set.items))
+	set.flattened = make([]interface{}, 0, len(set.items))
 	for item := range set.items {
 		set.flattened = append(set.flattened, item)
 	}
@@ -48,7 +65,9 @@ func (set *Set) Flatten() []string {
 // Len returns the number of items in the set.
 func (set *Set) Len() int64 {
 	set.lock.RLock()
+
 	size := int64(len(set.items))
+
 	set.lock.RUnlock()
 
 	return size
@@ -57,16 +76,50 @@ func (set *Set) Len() int64 {
 // Clear will remove all items from the set.
 func (set *Set) Clear() {
 	set.lock.Lock()
-	set.items = map[string]bool{}
+
+	set.items = map[interface{}]struct{}{}
+
 	set.lock.Unlock()
+}
+
+// All returns a bool indicating if all of the supplied items exist in the set.
+func (set *Set) All(items ...interface{}) bool {
+	set.lock.RLock()
+	defer set.lock.RUnlock()
+
+	for _, item := range items {
+		if _, ok := set.items[item]; !ok {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Dispose will add this set back into the pool.
+func (set *Set) Dispose() {
+	set.lock.Lock()
+	defer set.lock.Unlock()
+
+	for k := range set.items {
+		delete(set.items, k)
+	}
+
+	//this is so we don't hang onto any references
+	for i := 0; i < len(set.flattened); i++ {
+		set.flattened[i] = nil
+	}
+
+	set.flattened = set.flattened[:0]
+	pool.Put(set)
 }
 
 // New is the constructor for sets.  It will pull from a reuseable memory pool if it can.
 // Takes a list of items to initialize the set with.
-func NewSet(items ...string) *Set {
+func NewSet(items ...interface{}) *Set {
 	set := pool.Get().(*Set)
 	for _, item := range items {
-		set.items[item] = true
+		set.items[item] = struct{}{}
 	}
 
 	return set
@@ -75,7 +128,7 @@ func NewSet(items ...string) *Set {
 func init() {
 	pool.New = func() interface{} {
 		return &Set{
-			items: make(map[string]bool, 10),
+			items: make(map[interface{}]struct{}, 10),
 		}
 	}
 }
