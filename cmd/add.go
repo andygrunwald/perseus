@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 
+	"log"
+	"os"
+
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/perseus/commands"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
-	"os"
 )
 
 // addCmd represents the "add" command for the CLI interface.

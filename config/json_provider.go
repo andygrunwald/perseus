@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 )
 
+// JSONProvider provides the data structure for a configuration
+// file that is defined in JSON
 type JSONProvider struct {
 	content map[string]*json.RawMessage
 }
 
+// NewJSONProvider will create a new provider to work
+// with JSON content c in a convenient way
 func NewJSONProvider(c []byte) (*JSONProvider, error) {
 	b := make(map[string]*json.RawMessage)
 	err := json.Unmarshal(c, &b)

@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"path/filepath"
+	"strings"
 )
 
 // Client represents a client to communicate with a Packagist instance

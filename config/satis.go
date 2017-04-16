@@ -69,6 +69,7 @@ func NewSatis(c Provider) (*Satis, error) {
 	return s, nil
 }
 
+// AddRepository will add repository u to the current satis configuration
 func (s *Satis) AddRepository(u string) {
 	r := SatisRepository{
 		Type: "git",
@@ -78,14 +79,15 @@ func (s *Satis) AddRepository(u string) {
 	s.repositories[r.URL] = r
 }
 
+// AddRepositories will add a list of repositories u to the current satis configuration
 func (s *Satis) AddRepositories(u ...string) {
 	for _, r := range u {
 		s.AddRepository(r)
 	}
 }
 
+// WriteFile will write the satis configuration to file filename with permissions perm
 func (s *Satis) WriteFile(filename string, perm os.FileMode) error {
-
 	// We maintain the Satis configuration file on our own.
 	// This is not managed by viper.
 	// Maybe it make sense to switch this in feature.
@@ -116,6 +118,8 @@ func (s *Satis) WriteFile(filename string, perm os.FileMode) error {
 	return ioutil.WriteFile(filename, b, perm)
 }
 
+// GetRepositoriesAsSlice returns all configured repositories
+// from the configuration as a list.
 func (s *Satis) GetRepositoriesAsSlice() []SatisRepository {
 	c := make([]SatisRepository, 0, len(s.repositories))
 	for _, value := range s.repositories {

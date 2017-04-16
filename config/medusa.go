@@ -3,9 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/andygrunwald/perseus/perseus"
 	"net/url"
 	"regexp"
+
+	"github.com/andygrunwald/perseus/perseus"
 )
 
 // Medusa reflects the original Medusa configuration file.
@@ -39,12 +40,12 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	// Lets wait for feedback.
 	repositories := m.config.Get("repositories")
 	if repositories == nil {
-		return nil, NoRepositoriesError
+		return nil, ErrNoRepositories
 	}
 
 	repositoriesSlice := repositories.([]interface{})
 	if len(repositoriesSlice) == 0 {
-		return nil, NoRepositoriesError
+		return nil, ErrNoRepositories
 	}
 
 	for _, repoEntry := range repositoriesSlice {
@@ -74,15 +75,18 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	return nil, fmt.Errorf("No repository url found for package %s", p.Name)
 }
 
+// GetNamesOfRepositories returns all Packages from the configuration
+// key "repositories". A repository will only be returned when
+// it is complete (means a name and an url exists)
 func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
 	repositories := m.config.Get("repositories")
 	if repositories == nil {
-		return nil, NoRepositoriesError
+		return nil, ErrNoRepositories
 	}
 
 	repositoriesSlice := repositories.([]interface{})
 	if len(repositoriesSlice) == 0 {
-		return nil, NoRepositoriesError
+		return nil, ErrNoRepositories
 	}
 
 	r := []*perseus.Package{}
@@ -106,6 +110,7 @@ func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
 	return r, nil
 }
 
+// GetRequire returns all the configuration key "require"
 func (m *Medusa) GetRequire() []string {
 	return m.config.GetStringSlice("require")
 }

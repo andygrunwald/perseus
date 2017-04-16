@@ -33,8 +33,8 @@ func NewPackage(name, repository string) (*Package, error) {
 		return p, err
 	}
 
-	safeUrl := reg.ReplaceAllString(repository, "git://github.com/")
-	u, err := url.Parse(safeUrl)
+	safeURL := reg.ReplaceAllString(repository, "git://github.com/")
+	u, err := url.Parse(safeURL)
 	if err != nil {
 		return p, err
 	}

@@ -2,11 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
-	"log"
-	"path/filepath"
 )
 
 // UpdateCommand reflects the business logic and the Command interface to update all packages that were added or mirrored in the past.
@@ -36,7 +36,7 @@ func (c *UpdateCommand) Run() error {
 	p := fmt.Sprintf("%s/*/*.git", repoDir)
 	matches, err := filepath.Glob(p)
 	if err != nil {
-		fmt.Errorf("Error while determining folders for updating: %s", err)
+		return fmt.Errorf("Error while determining folders for updating: %s", err)
 	}
 
 	// If no repositories were found, we will exit here

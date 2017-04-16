@@ -163,7 +163,7 @@ func (d *PackagistDependencyResolver) worker(id int, jobs chan<- *Package, resul
 			}
 
 			// Handle dependency per dependency
-			for dependency, _ := range version.Require {
+			for dependency := range version.Require {
 				// We check if this dependency was already queued.
 				// It is typical that many different versions of one package don't
 				// change dependencies so often. So we would queue one package

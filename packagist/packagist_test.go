@@ -1,13 +1,13 @@
 package packagist_test
 
 import (
-	"net/http"
-	"testing"
-
 	"fmt"
-	. "github.com/andygrunwald/perseus/packagist"
+	"net/http"
 	"net/http/httptest"
 	"strings"
+	"testing"
+
+	. "github.com/andygrunwald/perseus/packagist"
 )
 
 var (

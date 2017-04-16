@@ -3,9 +3,10 @@ package config_test
 import (
 	"bytes"
 	"encoding/json"
-	. "github.com/andygrunwald/perseus/config"
 	"reflect"
 	"testing"
+
+	. "github.com/andygrunwald/perseus/config"
 )
 
 func unitTestJSONContent() []byte {

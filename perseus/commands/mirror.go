@@ -2,7 +2,11 @@ package commands
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/andygrunwald/perseus/config"
@@ -10,10 +14,6 @@ import (
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
 	"github.com/andygrunwald/perseus/types"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
@@ -51,8 +51,8 @@ func (c *MirrorCommand) Run() error {
 	}
 
 	// Get all required repositories and resolve those dependencies
-	pUrl := "https://packagist.org/"
-	packagistClient, err := packagist.New(pUrl, nil)
+	pURL := "https://packagist.org/"
+	packagistClient, err := packagist.New(pURL, nil)
 	if err != nil {
 		c.Log.Println(err)
 	}
@@ -117,17 +117,17 @@ func (c *MirrorCommand) Run() error {
 			c.Log.Printf("Mirroring of package \"%s\" successful", v.Package.Name)
 		}
 
-		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(v.Package.Name))
+		satisRepositories = append(satisRepositories, c.getLocalURLForRepository(v.Package.Name))
 	}
 	loader.Close()
 
 	// And as a final step, write the satis configuration
 	err = c.writeSatisConfig(satisRepositories...)
 
-	return nil
+	return err
 }
 
-func (c *MirrorCommand) getLocalUrlForRepository(p string) string {
+func (c *MirrorCommand) getLocalURLForRepository(p string) string {
 	var r string
 
 	satisURL := c.Config.GetString("satisurl")
