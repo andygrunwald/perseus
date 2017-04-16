@@ -29,7 +29,6 @@ But it has its limitations, flaws and disadvantages like:
 * Concurrency and usage of multiple threads for faster mirror/update runs
 * Serious error handling
 * Reporting of faulty packages or packages that can't be processed
-* [Monitoring HTTP-Endpoint](#monitoring)
 
 ## Installation
 
@@ -43,23 +42,9 @@ TODO
 
 TODO
 
-## Monitoring
-
-TODO
-
-## Production ready?
-
-Yes. *perseus* runs successfully in production at [trivago](http://www.trivago.com/) and mirrors PHP packages for > 200 engineers.
-
-Are you using *perseus* in production as well? [Open an issue and tell us](https://github.com/andygrunwald/perseus/issues/new)!
-
 ## Development
 
-### Code structure
-
-TODO
-
-## Unit tests
+### Unit tests
 
 A running go installation is required to execute unit tests.
 To execute them, run:
@@ -82,20 +67,6 @@ In this case it was easy.
 [Medusa](https://en.wikipedia.org/wiki/Medusa) was part of the greek mythology.
 I started looking in this direction and found *Perseus*.
 Checkout [Perseus with the Head of Medusa](https://en.wikipedia.org/wiki/Perseus_with_the_Head_of_Medusa) for more details..
-
-### The production story
-
-On Friday, the 6th of Jan. 2017 I had [a motivating chat](https://twitter.com/andygrunwald/status/817449096562753536) with my colleague [Matthias](https://github.com/mre).
-I presented him my idea about *perseus*, mentioned multiple ideas what can be built in and asked him about a challenge I faced about the software/project architecture.
-At the end of this chat he said: 
-
-> And when you are done, you put it in production [at trivago]. After the server started, you have max. 5h to get all bug fixes done. Then it needs to run and serve us and our packages.
-
-I just answered: 
-
-> Deal!.
-
-And in the end: **We did it.** And it works out. Challenges keep us motivated!
 
 ## Credits
 
