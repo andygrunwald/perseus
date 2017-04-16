@@ -28,7 +28,10 @@ type MirrorCommand struct {
 // Run is the business logic of MirrorCommand.
 func (c *MirrorCommand) Run() error {
 	c.wg = sync.WaitGroup{}
+	repos := types.NewSet()
 
+	// Get list of manual entered repositories
+	// and add them to the set
 	repoList, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
 		if config.IsNoRepositories(err) {
@@ -37,11 +40,10 @@ func (c *MirrorCommand) Run() error {
 			c.Log.Println(err)
 		}
 	}
+	// TODO: Okay, it seems to be that here is something wrong with the hashing
+	repos.Add(repoList)
 
-	repos := types.NewSet(repoList)
-
-	require := c.Config.GetRequire()
-
+	// Get all required repositories and resolve those dependencies
 	pUrl := "https://packagist.org/"
 	packagistClient, err := packagist.New(pUrl, nil)
 	if err != nil {
@@ -59,6 +61,7 @@ func (c *MirrorCommand) Run() error {
 	}
 	results := d.GetResultStream()
 
+	require := c.Config.GetRequire()
 	// Loop over the packages and add them
 	l := []*perseus.Package{}
 	for _, r := range require {
@@ -75,7 +78,7 @@ func (c *MirrorCommand) Run() error {
 			continue
 		}
 
-		repos.Add(p.Package.Name)
+		repos.Add(p.Package)
 	}
 
 	fmt.Printf("Found %d entries: %+v\n", repos.Len(), repos.Flatten())
