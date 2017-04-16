@@ -6,9 +6,14 @@ import (
 	"sync"
 
 	"github.com/andygrunwald/perseus/config"
+	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/packagist"
 	"github.com/andygrunwald/perseus/perseus"
 	"github.com/andygrunwald/perseus/types"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
@@ -40,8 +45,10 @@ func (c *MirrorCommand) Run() error {
 			c.Log.Println(err)
 		}
 	}
-	// TODO: Okay, it seems to be that here is something wrong with the hashing
-	repos.Add(repoList)
+
+	for _, r := range repoList {
+		repos.Add(r)
+	}
 
 	// Get all required repositories and resolve those dependencies
 	pUrl := "https://packagist.org/"
@@ -81,49 +88,91 @@ func (c *MirrorCommand) Run() error {
 		repos.Add(p.Package)
 	}
 
-	fmt.Printf("Found %d entries: %+v\n", repos.Len(), repos.Flatten())
+	c.Log.Printf("Start concurrent download process for %d packages with %d worker", repos.Len(), c.NumOfWorker)
+	loader, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
+	if err != nil {
+		return err
+	}
 
-	fmt.Println("Called: func(c *MirrorCommand) Run()")
-	panic("Not implemented yet: bin/medusa mirror [config]")
+	loaderResults := loader.GetResultStream()
+	flatten := repos.Flatten()
+	loaderList := make([]*perseus.Package, 0, len(flatten))
+	for _, item := range repos.Flatten() {
+		loaderList = append(loaderList, item.(*perseus.Package))
+	}
+	loader.Download(loaderList)
 
-	/*
-			No we have everything and we need to call the add command
-
-			$output->writeln('<info>Create mirror repositories</info>');
-
-		        foreach ($repos as $repo) {
-		            $command = $this->getApplication()->find('add');
-
-		            $arguments = array(
-		                'command'     => 'add',
-		                'package'     => $repo,
-		                'config'      => $medusaConfig,
-		            );
-
-		            $input = new ArrayInput($arguments);
-		            $returnCode = $command->run($input, $output);
-		        }
-
-		// TODO IMPLEMENT MirrorCommand
-		// TODO And make satis write file at the end
-		// TODO and make a worker / queue implementation
-
-		// Okay, now it gets wired, but we will call the Add command for every package.
-		//
-		for _, packet := range repos.Flatten() {
-			c := &AddCommand{
-				Package:          packet,
-				// We don't need dependencies here, because we had resolved them already
-				WithDependencies: false,
-				Config:           c.Config,
-				Log:              c.Log,
-				NumOfWorker:      c.NumOfWorker,
+	var satisRepositories []string
+	for i := 1; i <= int(repos.Len()); i++ {
+		v := <-loaderResults
+		if v.Error != nil {
+			if os.IsExist(v.Error) {
+				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", v.Package.Name)
+			} else {
+				c.Log.Printf("Error while mirroring package \"%s\": %s", v.Package.Name, v.Error)
+				// If we have an error, we don't need to add it to satis repositories
+				continue
 			}
-			err = c.Run()
-			if err != nil {
-				return fmt.Errorf("Error during execution of \"add\" command: %s\n", err)
-			}
+		} else {
+			c.Log.Printf("Mirroring of package \"%s\" successful", v.Package.Name)
 		}
-	*/
+
+		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(v.Package.Name))
+	}
+	loader.Close()
+
+	// And as a final step, write the satis configuration
+	err = c.writeSatisConfig(satisRepositories...)
+
+	return nil
+}
+
+func (c *MirrorCommand) getLocalUrlForRepository(p string) string {
+	var r string
+
+	satisURL := c.Config.GetString("satisurl")
+	repoDir := c.Config.GetString("repodir")
+
+	if len(satisURL) > 0 {
+		r = fmt.Sprintf("%s/%s.git", satisURL, p)
+	} else {
+		t := fmt.Sprintf("%s/%s.git", repoDir, p)
+		t = strings.TrimLeft(filepath.Clean(t), "/")
+		r = fmt.Sprintf("file:///%s", t)
+	}
+
+	return r
+}
+
+func (c *MirrorCommand) writeSatisConfig(satisRepositories ...string) error {
+	// Write Satis file
+	satisConfig := c.Config.GetString("satisconfig")
+	if len(satisConfig) == 0 {
+		c.Log.Print("No Satis configuration specified. Skipping to write a satis configuration.")
+		return nil
+	}
+
+	satisContent, err := ioutil.ReadFile(satisConfig)
+	if err != nil {
+		return fmt.Errorf("Can't read Satis configuration %s: %s", satisConfig, err)
+	}
+
+	j, err := config.NewJSONProvider(satisContent)
+	if err != nil {
+		return fmt.Errorf("Error while creating JSONProvider: %s", err)
+	}
+
+	s, err := config.NewSatis(j)
+	if err != nil {
+		return fmt.Errorf("Error while creating Satis object: %s", err)
+	}
+
+	s.AddRepositories(satisRepositories...)
+	err = s.WriteFile(satisConfig, 0644)
+	if err != nil {
+		return fmt.Errorf("Writing Satis configuration to %s failed: %s", satisConfig, err)
+	}
+
+	c.Log.Printf("Satis configuration successful written to %s", satisConfig)
 	return nil
 }
