@@ -2,6 +2,9 @@
 
 --------------------------------------------
 
+[![Build Status](https://travis-ci.org/andygrunwald/perseus.svg?branch=master)](https://travis-ci.org/andygrunwald/perseus)
+[![Go Report Card](https://goreportcard.com/badge/github.com/andygrunwald/perseus)](https://goreportcard.com/report/github.com/andygrunwald/perseus)
+
 Local git mirror for your PHP ([composer](https://getcomposer.org/)) project dependencies that works together with [Satis](https://github.com/composer/satis).
 
 *perseus* is a successor out of and drop-in replacement for [Medusa](https://github.com/instaclick/medusa).
