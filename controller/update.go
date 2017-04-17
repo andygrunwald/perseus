@@ -1,4 +1,4 @@
-package commands
+package controller
 
 import (
 	"fmt"
@@ -9,10 +9,10 @@ import (
 	"github.com/andygrunwald/perseus/downloader"
 )
 
-// UpdateCommand reflects the business logic and the Command interface to update all packages that were added or mirrored in the past.
+// UpdateController reflects the business logic and the Command interface to update all packages that were added or mirrored in the past.
 // This command is independent from an human interface (CLI, HTTP, etc.)
 // The human interfaces will interact with this command.
-type UpdateCommand struct {
+type UpdateController struct {
 	// Config is the main medusa configuration
 	Config *config.Medusa
 	// Log represents a logger to log messages
@@ -30,7 +30,7 @@ type updateResult struct {
 }
 
 // Run is the business logic of UpdateCommand.
-func (c *UpdateCommand) Run() error {
+func (c *UpdateController) Run() error {
 	repoDir := c.Config.GetString("repodir")
 
 	p := fmt.Sprintf("%s/*/*.git", repoDir)
@@ -74,7 +74,7 @@ func (c *UpdateCommand) Run() error {
 
 // worker is a single worker of the UpdateCommand.
 // Workers job is to update a bunch of repositories on disk.
-func (c *UpdateCommand) worker(id int, jobs <-chan string, results chan<- updateResult) {
+func (c *UpdateController) worker(id int, jobs <-chan string, results chan<- updateResult) {
 	for j := range jobs {
 		updateClient, err := downloader.NewGitUpdater()
 		if err != nil {

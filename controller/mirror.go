@@ -1,4 +1,4 @@
-package commands
+package controller
 
 import (
 	"fmt"
@@ -16,10 +16,10 @@ import (
 	"github.com/andygrunwald/perseus/types"
 )
 
-// MirrorCommand reflects the business logic and the Command interface to mirror all configured packages.
+// MirrorController reflects the business logic and the Command interface to mirror all configured packages.
 // This command is independent from an human interface (CLI, HTTP, etc.)
 // The human interfaces will interact with this command.
-type MirrorCommand struct {
+type MirrorController struct {
 	// Config is the main medusa configuration
 	Config *config.Medusa
 	// Log represents a logger to log messages
@@ -31,7 +31,7 @@ type MirrorCommand struct {
 }
 
 // Run is the business logic of MirrorCommand.
-func (c *MirrorCommand) Run() error {
+func (c *MirrorController) Run() error {
 	c.wg = sync.WaitGroup{}
 	repos := types.NewSet()
 
@@ -126,7 +126,7 @@ func (c *MirrorCommand) Run() error {
 	return err
 }
 
-func (c *MirrorCommand) getLocalURLForRepository(p string) string {
+func (c *MirrorController) getLocalURLForRepository(p string) string {
 	var r string
 
 	satisURL := c.Config.GetString("satisurl")
@@ -143,7 +143,7 @@ func (c *MirrorCommand) getLocalURLForRepository(p string) string {
 	return r
 }
 
-func (c *MirrorCommand) writeSatisConfig(satisRepositories ...string) error {
+func (c *MirrorController) writeSatisConfig(satisRepositories ...string) error {
 	// Write Satis file
 	satisConfig := c.Config.GetString("satisconfig")
 	if len(satisConfig) == 0 {

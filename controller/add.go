@@ -1,4 +1,4 @@
-package commands
+package controller
 
 import (
 	"fmt"
@@ -15,10 +15,10 @@ import (
 	"github.com/andygrunwald/perseus/perseus"
 )
 
-// AddCommand reflects the business logic and the Command interface to add a new package.
+// AddController reflects the business logic and the Command interface to add a new package.
 // This command is independent from an human interface (CLI, HTTP, etc.)
 // The human interfaces will interact with this command.
-type AddCommand struct {
+type AddController struct {
 	// WithDependencies decides if the dependencies of an external package needs to be mirrored as well
 	WithDependencies bool
 	// Package is the package to mirror
@@ -38,7 +38,7 @@ type downloadResult struct {
 }
 
 // Run is the business logic of AddCommand.
-func (c *AddCommand) Run() error {
+func (c *AddController) Run() error {
 	p, err := perseus.NewPackage(c.Package, "")
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func (c *AddCommand) Run() error {
 	return err
 }
 
-func (c *AddCommand) writeSatisConfig(satisRepositories ...string) error {
+func (c *AddController) writeSatisConfig(satisRepositories ...string) error {
 	// Write Satis file
 	satisConfig := c.Config.GetString("satisconfig")
 	if len(satisConfig) == 0 {
@@ -174,7 +174,7 @@ func (c *AddCommand) writeSatisConfig(satisRepositories ...string) error {
 	return nil
 }
 
-func (c *AddCommand) getLocalUrlForRepository(p string) string {
+func (c *AddController) getLocalUrlForRepository(p string) string {
 	var r string
 
 	satisURL := c.Config.GetString("satisurl")
@@ -191,7 +191,7 @@ func (c *AddCommand) getLocalUrlForRepository(p string) string {
 	return r
 }
 
-func (c *AddCommand) getURLOfPackageFromPackagist(p *perseus.Package) (*perseus.Package, error) {
+func (c *AddController) getURLOfPackageFromPackagist(p *perseus.Package) (*perseus.Package, error) {
 	packagistClient, err := packagist.New("https://packagist.org/", nil)
 	if err != nil {
 		return p, fmt.Errorf("Packagist client creation failed: %s", err)
