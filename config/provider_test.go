@@ -19,6 +19,30 @@ func (p *EmptyUnitTestProvider) GetContentMap() map[string]interface{} {
 	return map[string]interface{}{}
 }
 
+// EmptyWithKeysUnitTestProvider represents an 100% empty Provider implementation for unit testing.
+type EmptyWithKeysUnitTestProvider struct{}
+
+func (p *EmptyWithKeysUnitTestProvider) Get(key string) interface{} {
+	var m interface{}
+	if key == "repositories" {
+		m = []interface{}{}
+	}
+
+	return m
+}
+
+func (p *EmptyWithKeysUnitTestProvider) GetString(key string) string {
+	return ""
+}
+
+func (p *EmptyWithKeysUnitTestProvider) GetStringSlice(key string) []string {
+	return []string{}
+}
+
+func (p *EmptyWithKeysUnitTestProvider) GetContentMap() map[string]interface{} {
+	return map[string]interface{}{}
+}
+
 // MedusaUnitTestProvider represents a Provider implementation to return medusa settings for unit testing.
 type MedusaUnitTestProvider struct{}
 

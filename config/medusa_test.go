@@ -36,6 +36,8 @@ func TestMedusa_GetRepositoryURLOfPackage_FaultyRepositories(t *testing.T) {
 	}{
 		// No "repositories" configured at all
 		{"symfony/console", &EmptyUnitTestProvider{}},
+		// "repositories" key is there, but empty
+		{"key/exists", &EmptyWithKeysUnitTestProvider{}},
 		// Repositories configured, but not this one
 		{"twig/twig", &MedusaUnitTestProvider{}},
 		// Repositories configured, plus this one, but doesn't have an url key
@@ -88,6 +90,44 @@ func TestMedusa_GetRepositoryURLOfPackage_CorrectRepositories(t *testing.T) {
 		}
 		if err != nil {
 			t.Errorf("Package '%s': Expected error to be nil. Got: %+v", tt.name, err)
+		}
+	}
+}
+
+func TestMedusa_GetNamesOfRepositories_FaultyRepositories(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider Provider
+		num      int
+	}{
+		// No "repositories" configured at all
+		{"symfony/console", &EmptyUnitTestProvider{}, 0},
+		// "repositories" key is there, but empty
+		{"key/exists", &EmptyWithKeysUnitTestProvider{}, 0},
+		/*
+		// Repositories configured, but not this one
+		{"twig/twig", &MedusaUnitTestProvider{}, 0},
+		// Repositories configured, plus this one, but doesn't have an url key
+		{"no/url", &MedusaUnitTestProvider{}, 0},
+		// Repositories configured, plus this one, but has an empty url key
+		{"empty/url", &MedusaUnitTestProvider{}, 0},
+		// Repositories configured, plus this one, but has an invalid url key
+		{"invalid/url", &MedusaUnitTestProvider{}, 0},
+		*/
+	}
+
+	for _, tt := range tests {
+		m, err := NewMedusa(tt.provider)
+		if err != nil {
+			t.Errorf("NewMedusa(Provider) throws error: %s", err)
+		}
+
+		l, err := m.GetNamesOfRepositories()
+		if l != nil {
+			t.Errorf("Package '%s': Expected url to be nil. Got: %+v", tt.name, l)
+		}
+		if err == nil {
+			t.Errorf("Package '%s': No error thrown.", tt.name)
 		}
 	}
 }

@@ -38,13 +38,8 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 	// And i don't know if it make sense to implement there.
 	// I raised this question here: https://github.com/spf13/cast/issues/36
 	// Lets wait for feedback.
-	repositories := m.config.Get("repositories")
-	if repositories == nil {
-		return nil, ErrNoRepositories
-	}
-
-	repositoriesSlice := repositories.([]interface{})
-	if len(repositoriesSlice) == 0 {
+	repositoriesSlice, err := m.getRepositories()
+	if err != nil {
 		return nil, ErrNoRepositories
 	}
 
@@ -79,13 +74,8 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 // key "repositories". A repository will only be returned when
 // it is complete (means a name and an url exists)
 func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
-	repositories := m.config.Get("repositories")
-	if repositories == nil {
-		return nil, ErrNoRepositories
-	}
-
-	repositoriesSlice := repositories.([]interface{})
-	if len(repositoriesSlice) == 0 {
+	repositoriesSlice, err := m.getRepositories()
+	if err != nil {
 		return nil, ErrNoRepositories
 	}
 
@@ -109,6 +99,21 @@ func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
 
 	return r, nil
 }
+
+func (m *Medusa) getRepositories() ([]interface{}, error) {
+	repositories := m.config.Get("repositories")
+	if repositories == nil {
+		return nil, ErrNoRepositories
+	}
+
+	repositoriesSlice := repositories.([]interface{})
+	if len(repositoriesSlice) == 0 {
+		return nil, ErrNoRepositories
+	}
+
+	return repositoriesSlice, nil
+}
+
 
 // GetRequire returns all the configuration key "require"
 func (m *Medusa) GetRequire() []string {
