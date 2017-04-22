@@ -21,6 +21,34 @@ var (
 	testServer *httptest.Server
 )
 
+// setup sets up a test HTTP server along with a packagist.Client that is configured to talk to that test server.
+// Tests should register handlers on mux which provide mock responses for the API method being tested.
+func setup() {
+	// Test server
+	testMux = http.NewServeMux()
+	testServer = httptest.NewServer(testMux)
+
+	// Packagist client configured to use test server
+	testClient, _ = NewPackagist(testServer.URL, nil)
+}
+
+// teardown closes the test HTTP server.
+func teardown() {
+	testServer.Close()
+}
+
+func testMethod(t *testing.T, r *http.Request, want string) {
+	if got := r.Method; got != want {
+		t.Errorf("Request method: %v, want %v", got, want)
+	}
+}
+
+func testRequestURL(t *testing.T, r *http.Request, want string) {
+	if got := r.URL.String(); !strings.HasPrefix(got, want) {
+		t.Errorf("Request URL: %v, want %v", got, want)
+	}
+}
+
 func TestNewPackagist(t *testing.T) {
 	tests := []struct {
 		instanceURL string
@@ -63,35 +91,7 @@ func TestNewPackagist_InvalidInstances(t *testing.T) {
 	}
 }
 
-// setup sets up a test HTTP server along with a packagist.Client that is configured to talk to that test server.
-// Tests should register handlers on mux which provide mock responses for the API method being tested.
-func setup() {
-	// Test server
-	testMux = http.NewServeMux()
-	testServer = httptest.NewServer(testMux)
-
-	// Packagist client configured to use test server
-	testClient, _ = NewPackagist(testServer.URL, nil)
-}
-
-// teardown closes the test HTTP server.
-func teardown() {
-	testServer.Close()
-}
-
-func testMethod(t *testing.T, r *http.Request, want string) {
-	if got := r.Method; got != want {
-		t.Errorf("Request method: %v, want %v", got, want)
-	}
-}
-
-func testRequestURL(t *testing.T, r *http.Request, want string) {
-	if got := r.URL.String(); !strings.HasPrefix(got, want) {
-		t.Errorf("Request URL: %v, want %v", got, want)
-	}
-}
-
-func TestGetPackage(t *testing.T) {
+func TestGetPackageByName(t *testing.T) {
 	pName := "symfony/polyfill"
 	setup()
 	defer teardown()
@@ -115,7 +115,7 @@ func TestGetPackage(t *testing.T) {
 	}
 }
 
-func TestGetPackage_InvalidPackage(t *testing.T) {
+func TestGetPackageByName_InvalidPackage(t *testing.T) {
 	setup()
 	defer teardown()
 	testMux.HandleFunc("/packages/invalid/package.json", func(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +127,26 @@ func TestGetPackage_InvalidPackage(t *testing.T) {
 	})
 
 	p, _, err := testClient.GetPackageByName("invalid/package")
+	if p != nil {
+		t.Errorf("Expected an empty package. Got: %+v", p)
+	}
+	if err == nil {
+		t.Error("Expected an error. Got nothing")
+	}
+}
+
+func TestGetPackageByName_InvalidJSON(t *testing.T) {
+	setup()
+	defer teardown()
+	testMux.HandleFunc("/packages/invalid/json.json", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "GET")
+		testRequestURL(t, r, "/packages/invalid/json.json")
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{...`)
+	})
+
+	p, _, err := testClient.GetPackageByName("invalid/json")
 	if p != nil {
 		t.Errorf("Expected an empty package. Got: %+v", p)
 	}
