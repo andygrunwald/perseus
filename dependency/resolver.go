@@ -9,8 +9,8 @@ import (
 	"github.com/andygrunwald/perseus/types"
 )
 
-// DependencyResolver is an interface to resolve package dependencies
-type DependencyResolver interface {
+// Resolver is an interface to resolve package dependencies
+type Resolver interface {
 	Resolve(packageList []*Package)
 	GetResultStream() <-chan *Result
 }
@@ -45,7 +45,7 @@ type Result struct {
 
 // NewDependencyResolver will create a new instance of a DependencyResolver.
 // Standard implementation is the PackagistDependencyResolver.
-func NewDependencyResolver(numOfWorker int, p packagist.ApiClient) (DependencyResolver, error) {
+func NewDependencyResolver(numOfWorker int, p packagist.ApiClient) (Resolver, error) {
 	if numOfWorker == 0 {
 		return nil, fmt.Errorf("Starting a dependency resolver with zero worker is not possible")
 	}
