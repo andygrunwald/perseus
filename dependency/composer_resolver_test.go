@@ -3,9 +3,9 @@ package dependency_test
 import (
 	"testing"
 
+	"fmt"
 	. "github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/dependency/repository"
-	"fmt"
 )
 
 // resolvePackages is a small helper function to avoid code duplication

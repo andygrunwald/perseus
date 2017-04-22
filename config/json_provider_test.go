@@ -35,9 +35,9 @@ func unitTestJSONContent() []byte {
         }
     ],
     "dummy-list": [
-    	"https://www.google.com/",
-    	"https://www.github.com/",
-    	"https://gobot.io/"
+        "https://www.google.com/",
+        "https://www.github.com/",
+        "https://gobot.io/"
     ],
     "require-all": true
 }`)
