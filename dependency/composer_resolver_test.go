@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	. "github.com/andygrunwald/perseus/dependency"
+	"github.com/andygrunwald/perseus/dependency/repository"
+	"fmt"
 )
 
 // resolvePackages is a small helper function to avoid code duplication
@@ -117,4 +119,40 @@ func TestComposerResolver_ReplacedPackageNames(t *testing.T) {
 			t.Errorf("Package %s was not replaced as expected. Expected: %s, got: %s", tt.packageName, tt.replacedPackageName, got[0].Package.Name)
 		}
 	}
+}
+
+func ExampleComposerResolver() {
+	u := "https://packagist.org/"
+	packageName := "symfony/console"
+	numOfWorker := 3
+
+	// Create a new package
+	p, err := NewPackage(packageName, "")
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a packagist client (PHP)
+	packagistClient, err := repository.NewPackagist(u, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// Create a composer resolver and inject the packagist client
+	resolver, err := NewComposerResolver(numOfWorker, packagistClient)
+	if err != nil {
+		panic(err)
+	}
+
+	results := resolver.GetResultStream()
+	go resolver.Resolve([]*Package{p})
+
+	dependencies := []string{}
+	// Finally we collect all the results of the work.
+	for v := range results {
+		dependencies = append(dependencies, v.Package.Name)
+	}
+
+	fmt.Printf("%d dependencies found for package \"%s\" on %s", len(dependencies), p.Name, u)
+	// Output: 4 dependencies found for package "symfony/console" on https://packagist.org/
 }
