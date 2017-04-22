@@ -13,7 +13,7 @@ import (
 	"github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/downloader"
-	"github.com/andygrunwald/perseus/types"
+	"github.com/andygrunwald/perseus/types/set"
 )
 
 // MirrorController reflects the business logic and the Command interface to mirror all configured packages.
@@ -33,7 +33,7 @@ type MirrorController struct {
 // Run is the business logic of MirrorCommand.
 func (c *MirrorController) Run() error {
 	c.wg = sync.WaitGroup{}
-	repos := types.NewSet()
+	repos := set.New()
 
 	// Get list of manual entered repositories
 	// and add them to the set

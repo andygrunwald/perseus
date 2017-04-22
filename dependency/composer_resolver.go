@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/andygrunwald/perseus/dependency/repository"
-	"github.com/andygrunwald/perseus/types"
+	"github.com/andygrunwald/perseus/types/set"
 )
 
 // ComposerResolver is an implementation of Resolver for Composer (PHP)
@@ -22,9 +22,9 @@ type ComposerResolver struct {
 	// results is the channel where all resolved dependencies will be streamed
 	results chan *Result
 	// resolved is a storage to track which packages are already resolved
-	resolved *types.Set
+	resolved *set.Set
 	// queued is a storage to track which packages were already queued
-	queued *types.Set
+	queued *set.Set
 	// replacee is a hashmap to replace old/renamed/obsolete packages that would throw an error otherwise
 	replacee map[string]string
 }

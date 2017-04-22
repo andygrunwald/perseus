@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/andygrunwald/perseus/dependency/repository"
-	"github.com/andygrunwald/perseus/types"
+	"github.com/andygrunwald/perseus/types/set"
 )
 
 // Resolver is an interface to resolve package dependencies
@@ -35,8 +35,8 @@ func NewComposerResolver(numOfWorker int, p repository.Client) (Resolver, error)
 		waitGroup:   sync.WaitGroup{},
 		queue:       make(chan *Package, (numOfWorker + 1)),
 		results:     make(chan *Result),
-		resolved:    types.NewSet(),
-		queued:      types.NewSet(),
+		resolved:    set.New(),
+		queued:      set.New(),
 		repository:  p,
 		replacee:    getReplaceeMap(),
 	}
