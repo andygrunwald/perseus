@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 )
 
 type GitDownloader struct {
@@ -16,14 +16,14 @@ type GitDownloader struct {
 	dir string
 
 	// queue is the queue channel where all jobs are stored that needs to be processed by the worker
-	queue chan *perseus.Package
+	queue chan *dependency.Package
 	// results is the channel where all resolved dependencies will be streamed
 	results chan *Result
 }
 
 // Result reflects a result of a concurrent download process.
 type Result struct {
-	Package *perseus.Package
+	Package *dependency.Package
 	Error   error
 }
 
@@ -35,7 +35,7 @@ func NewGit(numOfWorker int, dir string) (Downloader, error) {
 	c := &GitDownloader{
 		workerCount: numOfWorker,
 		dir:         dir,
-		queue:       make(chan *perseus.Package, (numOfWorker + 1)),
+		queue:       make(chan *dependency.Package, (numOfWorker + 1)),
 		results:     make(chan *Result),
 	}
 	return c, nil
@@ -54,7 +54,7 @@ func (d *GitDownloader) Close() error {
 }
 
 // Start will kick of the dependency resolver process.
-func (d *GitDownloader) Download(packages []*perseus.Package) {
+func (d *GitDownloader) Download(packages []*dependency.Package) {
 	// Start the worker
 	for w := 1; w <= d.workerCount; w++ {
 		go d.worker(w, d.queue, d.results)
@@ -72,7 +72,7 @@ func (d *GitDownloader) Download(packages []*perseus.Package) {
 // id the a id per worker (only for logging/debugging purpose).
 // jobs is the jobs channel (the worker needs to be able to read the jobs).
 // results is the channel where all results will be stored once they are resolved.
-func (d *GitDownloader) worker(id int, jobs <-chan *perseus.Package, results chan<- *Result) {
+func (d *GitDownloader) worker(id int, jobs <-chan *dependency.Package, results chan<- *Result) {
 	for j := range jobs {
 		targetDir := fmt.Sprintf("%s/%s.git", d.dir, j.Name)
 

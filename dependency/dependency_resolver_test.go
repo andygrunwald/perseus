@@ -1,4 +1,4 @@
-package perseus_test
+package dependency_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/andygrunwald/perseus/packagist"
-	. "github.com/andygrunwald/perseus/perseus"
+	. "github.com/andygrunwald/perseus/dependency"
 )
 
 // testError is an interface to be able to handle

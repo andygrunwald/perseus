@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 )
 
 // Medusa reflects the original Medusa configuration file.
@@ -31,7 +31,7 @@ func NewMedusa(c Provider) (*Medusa, error) {
 // GetRepositoryURLOfPackage will determine if package p is part of the configuration.
 // If p is part and a url is configured and this url is valid, this url will be returned.
 // Otherwise an error.
-func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error) {
+func (m *Medusa) GetRepositoryURLOfPackage(p *dependency.Package) (*url.URL, error) {
 	// TODO Is there a better solution? We cast here and cast and cast ...
 	// Yep, checkout https://github.com/spf13/viper#getting-values-from-viper
 	// Sadly they don't support a []map[string]string which is the "repositories" section (yet).
@@ -73,13 +73,13 @@ func (m *Medusa) GetRepositoryURLOfPackage(p *perseus.Package) (*url.URL, error)
 // GetNamesOfRepositories returns all Packages from the configuration
 // key "repositories". A repository will only be returned when
 // it is complete (means a name and an url exists)
-func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
+func (m *Medusa) GetNamesOfRepositories() ([]*dependency.Package, error) {
 	repositoriesSlice, err := m.getRepositories()
 	if err != nil {
 		return nil, ErrNoRepositories
 	}
 
-	r := []*perseus.Package{}
+	r := []*dependency.Package{}
 	for _, repoEntry := range repositoriesSlice {
 		repoEntryMap := repoEntry.(map[string]interface{})
 		if val, ok := repoEntryMap["name"]; ok {
@@ -87,7 +87,7 @@ func (m *Medusa) GetNamesOfRepositories() ([]*perseus.Package, error) {
 
 			if v, ok := repoEntryMap["url"]; ok {
 				if u := v.(string); len(u) > 0 {
-					pack, err := perseus.NewPackage(name, u)
+					pack, err := dependency.NewPackage(name, u)
 					if err != nil {
 						continue
 					}

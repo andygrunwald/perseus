@@ -12,7 +12,7 @@ import (
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/packagist"
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/types"
 )
 
@@ -62,7 +62,7 @@ func (c *MirrorController) Run() error {
 	// We set the queue length to the number of workers + 1. Why?
 	// With this every worker has work, when the queue is filled.
 	// During the add command, this is enough in most of the cases.
-	d, err := perseus.NewDependencyResolver(c.NumOfWorker, packagistClient)
+	d, err := dependency.NewDependencyResolver(c.NumOfWorker, packagistClient)
 	if err != nil {
 		return err
 	}
@@ -70,9 +70,9 @@ func (c *MirrorController) Run() error {
 
 	require := c.Config.GetRequire()
 	// Loop over the packages and add them
-	l := []*perseus.Package{}
+	l := []*dependency.Package{}
 	for _, r := range require {
-		p, _ := perseus.NewPackage(r, "")
+		p, _ := dependency.NewPackage(r, "")
 		l = append(l, p)
 	}
 
@@ -96,9 +96,9 @@ func (c *MirrorController) Run() error {
 
 	loaderResults := loader.GetResultStream()
 	flatten := repos.Flatten()
-	loaderList := make([]*perseus.Package, 0, len(flatten))
+	loaderList := make([]*dependency.Package, 0, len(flatten))
 	for _, item := range repos.Flatten() {
-		loaderList = append(loaderList, item.(*perseus.Package))
+		loaderList = append(loaderList, item.(*dependency.Package))
 	}
 	loader.Download(loaderList)
 

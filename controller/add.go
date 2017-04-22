@@ -12,7 +12,7 @@ import (
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/packagist"
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 )
 
 // AddController reflects the business logic and the Command interface to add a new package.
@@ -39,13 +39,13 @@ type downloadResult struct {
 
 // Run is the business logic of AddCommand.
 func (c *AddController) Run() error {
-	p, err := perseus.NewPackage(c.Package, "")
+	p, err := dependency.NewPackage(c.Package, "")
 	if err != nil {
 		return err
 	}
 
 	var satisRepositories []string
-	downloadablePackages := []*perseus.Package{}
+	downloadablePackages := []*dependency.Package{}
 
 	// We don't respect the error here.
 	// OH: "WTF? Why? You claim 'Serious error handling' in the README!"
@@ -70,12 +70,12 @@ func (c *AddController) Run() error {
 			// We set the queue length to the number of workers + 1. Why?
 			// With this every worker has work, when the queue is filled.
 			// During the add command, this is enough in most of the cases.
-			d, err := perseus.NewDependencyResolver(c.NumOfWorker, packagistClient)
+			d, err := dependency.NewDependencyResolver(c.NumOfWorker, packagistClient)
 			if err != nil {
 				return err
 			}
 			results := d.GetResultStream()
-			go d.Resolve([]*perseus.Package{p})
+			go d.Resolve([]*dependency.Package{p})
 
 			dependencyNames := []string{}
 			// Finally we collect all the results of the work.
@@ -191,7 +191,7 @@ func (c *AddController) getLocalUrlForRepository(p string) string {
 	return r
 }
 
-func (c *AddController) getURLOfPackageFromPackagist(p *perseus.Package) (*perseus.Package, error) {
+func (c *AddController) getURLOfPackageFromPackagist(p *dependency.Package) (*dependency.Package, error) {
 	packagistClient, err := packagist.New("https://packagist.org/", nil)
 	if err != nil {
 		return p, fmt.Errorf("Packagist client creation failed: %s", err)

@@ -1,10 +1,10 @@
-package perseus_test
+package dependency_test
 
 import (
 	"reflect"
 	"testing"
 
-	. "github.com/andygrunwald/perseus/perseus"
+	. "github.com/andygrunwald/perseus/dependency"
 )
 
 func TestNewPackage(t *testing.T) {

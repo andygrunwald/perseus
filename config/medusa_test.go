@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "github.com/andygrunwald/perseus/config"
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 )
 
 func TestNewMedusa(t *testing.T) {
@@ -54,7 +54,7 @@ func TestMedusa_GetRepositoryURLOfPackage_FaultyRepositories(t *testing.T) {
 			t.Errorf("NewMedusa(Provider) throws error: %s", err)
 		}
 
-		p := &perseus.Package{Name: tt.name}
+		p := &dependency.Package{Name: tt.name}
 		u, err := m.GetRepositoryURLOfPackage(p)
 		if u != nil {
 			t.Errorf("Package '%s': Expected url to be nil. Got: %+v", tt.name, u)
@@ -82,7 +82,7 @@ func TestMedusa_GetRepositoryURLOfPackage_CorrectRepositories(t *testing.T) {
 			t.Errorf("NewMedusa(Provider) throws error: %s", err)
 		}
 
-		p := &perseus.Package{Name: tt.name}
+		p := &dependency.Package{Name: tt.name}
 		u, err := m.GetRepositoryURLOfPackage(p)
 		if u == nil {
 			t.Errorf("Package '%s': No url returned. Expected one.", tt.name)

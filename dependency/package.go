@@ -1,4 +1,4 @@
-package perseus
+package dependency
 
 import (
 	"errors"

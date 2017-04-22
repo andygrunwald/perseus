@@ -3,12 +3,12 @@ package downloader
 import (
 	"io"
 
-	"github.com/andygrunwald/perseus/perseus"
+	"github.com/andygrunwald/perseus/dependency"
 )
 
 type Downloader interface {
 	io.Closer
 
-	Download(packages []*perseus.Package)
+	Download(packages []*dependency.Package)
 	GetResultStream() <-chan *Result
 }
