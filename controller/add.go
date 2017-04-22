@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/andygrunwald/perseus/config"
-	"github.com/andygrunwald/perseus/downloader"
-	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/dependency"
+	"github.com/andygrunwald/perseus/dependency/repository"
+	"github.com/andygrunwald/perseus/downloader"
 )
 
 // AddController reflects the business logic and the Command interface to add a new package.

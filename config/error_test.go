@@ -1,15 +1,15 @@
 package config_test
 
 import (
-	"testing"
 	"errors"
+	"testing"
 
 	. "github.com/andygrunwald/perseus/config"
 )
 
 func TestIsNoRepositories(t *testing.T) {
 	tests := []struct {
-		err     error
+		err    error
 		result bool
 	}{
 		{ErrNoRepositories, true},

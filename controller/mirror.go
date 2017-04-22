@@ -10,9 +10,9 @@ import (
 	"sync"
 
 	"github.com/andygrunwald/perseus/config"
-	"github.com/andygrunwald/perseus/downloader"
-	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/dependency"
+	"github.com/andygrunwald/perseus/dependency/repository"
+	"github.com/andygrunwald/perseus/downloader"
 	"github.com/andygrunwald/perseus/types"
 )
 

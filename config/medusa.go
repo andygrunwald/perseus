@@ -114,7 +114,6 @@ func (m *Medusa) getRepositories() ([]interface{}, error) {
 	return repositoriesSlice, nil
 }
 
-
 // GetRequire returns all the configuration key "require"
 func (m *Medusa) GetRequire() []string {
 	return m.config.GetStringSlice("require")

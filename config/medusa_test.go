@@ -105,14 +105,14 @@ func TestMedusa_GetNamesOfRepositories_FaultyRepositories(t *testing.T) {
 		// "repositories" key is there, but empty
 		{"key/exists", &EmptyWithKeysUnitTestProvider{}, 0},
 		/*
-		// Repositories configured, but not this one
-		{"twig/twig", &MedusaUnitTestProvider{}, 0},
-		// Repositories configured, plus this one, but doesn't have an url key
-		{"no/url", &MedusaUnitTestProvider{}, 0},
-		// Repositories configured, plus this one, but has an empty url key
-		{"empty/url", &MedusaUnitTestProvider{}, 0},
-		// Repositories configured, plus this one, but has an invalid url key
-		{"invalid/url", &MedusaUnitTestProvider{}, 0},
+			// Repositories configured, but not this one
+			{"twig/twig", &MedusaUnitTestProvider{}, 0},
+			// Repositories configured, plus this one, but doesn't have an url key
+			{"no/url", &MedusaUnitTestProvider{}, 0},
+			// Repositories configured, plus this one, but has an empty url key
+			{"empty/url", &MedusaUnitTestProvider{}, 0},
+			// Repositories configured, plus this one, but has an invalid url key
+			{"invalid/url", &MedusaUnitTestProvider{}, 0},
 		*/
 	}
 
