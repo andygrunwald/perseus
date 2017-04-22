@@ -23,3 +23,12 @@ func TestNewPackage(t *testing.T) {
 		}
 	}
 }
+
+func TestNewPackage_WrongURL(t *testing.T) {
+	name := "symfony/console"
+	repo := "://github.com/symfony/symfony"
+
+	if _, err := NewPackage(name, repo); err == nil {
+		t.Errorf("Expected an error with NewPackage(%s, %s). Got nil", name, repo)
+	}
+}
