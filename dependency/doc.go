@@ -27,6 +27,6 @@ of packages. And this algorithm is not stable.
 Means: The order of the package can be different each time.
 The caller code must be able to handle it.
 
-Checkout the exmaples on how to use a resolver in combination with a repository.Client.
+Checkout the examples on how to use a resolver in combination with a repository.Client.
 */
 package dependency
