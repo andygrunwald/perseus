@@ -1,4 +1,4 @@
-package types
+package set
 
 import (
 	"sync"
@@ -96,30 +96,16 @@ func (set *Set) All(items ...interface{}) bool {
 	return true
 }
 
-// Dispose will add this set back into the pool.
-func (set *Set) Dispose() {
-	set.lock.Lock()
-	defer set.lock.Unlock()
-
-	for k := range set.items {
-		delete(set.items, k)
-	}
-
-	//this is so we don't hang onto any references
-	for i := 0; i < len(set.flattened); i++ {
-		set.flattened[i] = nil
-	}
-
-	set.flattened = set.flattened[:0]
-	pool.Put(set)
-}
-
 // New is the constructor for sets.  It will pull from a reuseable memory pool if it can.
 // Takes a list of items to initialize the set with.
-func NewSet(items ...interface{}) *Set {
+func New(items ...interface{}) *Set {
 	set := pool.Get().(*Set)
 	for _, item := range items {
 		set.items[item] = struct{}{}
+	}
+
+	if len(items) > 0 {
+		set.flattened = nil
 	}
 
 	return set

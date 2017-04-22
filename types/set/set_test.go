@@ -1,4 +1,4 @@
-package types
+package set
 
 import (
 	"reflect"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestAddDuplicateItem(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 	set.Add(`test`)
 
@@ -17,7 +17,7 @@ func TestAddDuplicateItem(t *testing.T) {
 }
 
 func TestAddItems(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 	set.Add(`test1`)
 
@@ -38,7 +38,7 @@ func TestAddItems(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 	set.Remove(`test`)
 
@@ -48,7 +48,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 
 	if !set.Exists(`test`) {
@@ -60,8 +60,24 @@ func TestExists(t *testing.T) {
 	}
 }
 
+func TestExists_WithNewItems(t *testing.T) {
+	set := New(`test`, `test1`)
+
+	if !set.Exists(`test`) {
+		t.Errorf(`Correct existence not determined`)
+	}
+
+	if !set.Exists(`test1`) {
+		t.Errorf(`Correct existence not determined`)
+	}
+
+	if set.Exists(`test2`) {
+		t.Errorf(`Correct nonexistence not determined.`)
+	}
+}
+
 func TestLen(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 
 	if set.Len() != 1 {
@@ -75,7 +91,7 @@ func TestLen(t *testing.T) {
 }
 
 func TestFlattenCaches(t *testing.T) {
-	set := NewSet()
+	set := New()
 	item := `test`
 	set.Add(item)
 
@@ -86,8 +102,21 @@ func TestFlattenCaches(t *testing.T) {
 	}
 }
 
+func TestFlattenCaches_CacheReturn(t *testing.T) {
+	set := New()
+	item := `test`
+	set.Add(item)
+
+	flatten1 := set.Flatten()
+	flatten2 := set.Flatten()
+
+	if !reflect.DeepEqual(flatten1, flatten2) {
+		t.Errorf(`Flatten cache is not the same as original result. Got %+v, expected %+v`, 1, flatten2, flatten1)
+	}
+}
+
 func TestAddClearsCache(t *testing.T) {
-	set := NewSet()
+	set := New()
 	item := `test`
 	set.Add(item)
 	set.Flatten()
@@ -107,7 +136,7 @@ func TestAddClearsCache(t *testing.T) {
 }
 
 func TestDeleteClearsCache(t *testing.T) {
-	set := NewSet()
+	set := New()
 	item := `test`
 	set.Add(item)
 	set.Flatten()
@@ -120,7 +149,7 @@ func TestDeleteClearsCache(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
-	set := NewSet()
+	set := New()
 	item := `test`
 	set.Add(item)
 
@@ -138,7 +167,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestClear(t *testing.T) {
-	set := NewSet()
+	set := New()
 	set.Add(`test`)
 
 	set.Clear()
@@ -149,7 +178,7 @@ func TestClear(t *testing.T) {
 }
 
 func BenchmarkFlatten(b *testing.B) {
-	set := NewSet()
+	set := New()
 	for i := 0; i < 50; i++ {
 		item := strconv.Itoa(i)
 		set.Add(item)
@@ -162,7 +191,7 @@ func BenchmarkFlatten(b *testing.B) {
 }
 
 func BenchmarkLen(b *testing.B) {
-	set := NewSet()
+	set := New()
 	for i := 0; i < 50; i++ {
 		item := strconv.Itoa(i)
 		set.Add(item)
@@ -175,7 +204,7 @@ func BenchmarkLen(b *testing.B) {
 }
 
 func BenchmarkExists(b *testing.B) {
-	set := NewSet()
+	set := New()
 	set.Add(1)
 
 	b.ResetTimer()
@@ -185,7 +214,7 @@ func BenchmarkExists(b *testing.B) {
 }
 
 func BenchmarkClear(b *testing.B) {
-	set := NewSet()
+	set := New()
 	for i := 0; i < b.N; i++ {
 		set.Clear()
 	}
