@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/andygrunwald/perseus/packagist"
 	. "github.com/andygrunwald/perseus/dependency"
+	"github.com/andygrunwald/perseus/dependency/repository"
 )
 
 // testError is an interface to be able to handle
@@ -20,10 +20,10 @@ type testError interface {
 // for unit test purpse
 type testApiClient struct{}
 
-// GetPackage will return information about package name.
+// GetPackageByName will return information about package name.
 // This is a dummy implementation only for unit test purpose.
 // It is required that this return the exact same results at every unit test run.
-func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Response, error) {
+func (c *testApiClient) GetPackageByName(name string) (*repository.PackagistPackage, *http.Response, error) {
 	switch name {
 	// Simulate: API returns an error
 	case "api/error":
@@ -33,9 +33,9 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		return nil, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/console
 	case "symfony/console":
-		p := &packagist.Package{
+		p := &repository.PackagistPackage{
 			Name: name,
-			Versions: map[string]packagist.Composer{
+			Versions: map[string]repository.Composer{
 				"3.2.2": {
 					Require: map[string]string{
 						"php": ">=5.5.9",
@@ -60,9 +60,9 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/debug
 	case "symfony/debug":
-		p := &packagist.Package{
+		p := &repository.PackagistPackage{
 			Name: name,
-			Versions: map[string]packagist.Composer{
+			Versions: map[string]repository.Composer{
 				"3.2.1": {
 					Require: map[string]string{
 						"php":     ">=5.5.9",
@@ -75,9 +75,9 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for symfony/polyfill-mbstring
 	case "symfony/polyfill-mbstring":
-		p := &packagist.Package{
+		p := &repository.PackagistPackage{
 			Name: name,
-			Versions: map[string]packagist.Composer{
+			Versions: map[string]repository.Composer{
 				"1.3.0": {
 					Require: map[string]string{
 						"php": ">=5.3.3",
@@ -88,9 +88,9 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 		return p, &http.Response{StatusCode: http.StatusOK}, nil
 	// Simulate: API returns valid content for psr/log
 	case "psr/log":
-		p := &packagist.Package{
+		p := &repository.PackagistPackage{
 			Name: name,
-			Versions: map[string]packagist.Composer{
+			Versions: map[string]repository.Composer{
 				"1.0.2": {
 					Require: map[string]string{
 						"php": ">=5.3.0",
@@ -116,7 +116,7 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 	case "jms/metadata":
 		fallthrough
 	case "zf1/zend-registry":
-		p := &packagist.Package{
+		p := &repository.PackagistPackage{
 			Name: name,
 		}
 		return p, &http.Response{StatusCode: http.StatusOK}, nil
@@ -125,8 +125,8 @@ func (c *testApiClient) GetPackage(name string) (*packagist.Package, *http.Respo
 	return nil, nil, nil
 }
 
-func TestNewDependencyResolver(t *testing.T) {
-	d, err := NewDependencyResolver(10, &testApiClient{})
+func TestNewComposerResolver(t *testing.T) {
+	d, err := NewComposerResolver(10, &testApiClient{})
 	if err != nil {
 		t.Errorf("Error while creating a new dependency resolver: %s", err)
 	}
@@ -135,10 +135,10 @@ func TestNewDependencyResolver(t *testing.T) {
 	}
 }
 
-func TestNewDependencyResolver_Error(t *testing.T) {
+func TestNewComposerResolver_Error(t *testing.T) {
 	tests := []struct {
 		numOfWorker     int
-		packagistClient packagist.ApiClient
+		packagistClient repository.Client
 	}{
 		{0, &testApiClient{}},
 		{9, nil},
@@ -146,121 +146,8 @@ func TestNewDependencyResolver_Error(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got, err := NewDependencyResolver(tt.numOfWorker, tt.packagistClient); err == nil {
+		if got, err := NewComposerResolver(tt.numOfWorker, tt.packagistClient); err == nil {
 			t.Errorf("No error while creating a new dependency resolver. Got: %+v", got)
-		}
-	}
-}
-
-// resolvePackages is a small helper function to avoid code duplication
-// It will start the dependency resolver for packageName
-func resolvePackages(t testError, packageName string) []*Result {
-	apiClient := &testApiClient{}
-	d, err := NewDependencyResolver(3, apiClient)
-	if err != nil {
-		t.Errorf("Didn't expected an error. Got %s", err)
-	}
-	results := d.GetResultStream()
-	p, _ := NewPackage(packageName, "")
-	go d.Resolve([]*Package{p})
-
-	r := []*Result{}
-	// Finally we collect all the results of the work.
-	for v := range results {
-		r = append(r, v)
-	}
-
-	return r
-}
-
-// isStringInResult returns true once needle was found in haystack
-func isStringInResult(needle string, haystack []*Result) bool {
-	for _, b := range haystack {
-		if b.Package == nil {
-			return false
-		}
-		if b.Package.Name == needle {
-			return true
-		}
-	}
-	return false
-}
-
-func TestPackagistDependencyResolver_SystemPackage(t *testing.T) {
-	got := resolvePackages(t, "php")
-
-	if len(got) > 0 {
-		t.Errorf("Didn't expected results. Got %+v", got)
-	}
-}
-
-func TestPackagistDependencyResolver_ApiClientError(t *testing.T) {
-	p := "api/error"
-	got := resolvePackages(t, p)
-
-	if got[0].Error == nil {
-		t.Errorf("Expected an error for package %s to emulate an API error. Got nothing", p)
-	}
-}
-
-func TestPackagistDependencyResolver_EmptyPackageFromApiClient(t *testing.T) {
-	p := "api/empty"
-	got := resolvePackages(t, p)
-
-	if got[0].Error == nil {
-		t.Errorf("Expected an error for package %s to emulate an empty package from API. Got nothing", p)
-	}
-}
-
-func TestPackagistDependencyResolver_SuccessSymfonyConsole(t *testing.T) {
-	p := "symfony/console"
-	got := resolvePackages(t, p)
-
-	if n := len(got); n != 4 {
-		t.Errorf("Expected four resolved dependencies. Got %d: %+v", n, got)
-	}
-
-	if isStringInResult(p, got) == false {
-		t.Errorf("Expected package %s in resultset. Not found.", p)
-	}
-
-	p = "symfony/polyfill-mbstring"
-	if isStringInResult(p, got) == false {
-		t.Errorf("Expected package %s in resultset. Not found.", p)
-	}
-
-	p = "symfony/debug"
-	if isStringInResult(p, got) == false {
-		t.Errorf("Expected package %s in resultset. Not found.", p)
-	}
-
-	p = "psr/log"
-	if isStringInResult(p, got) == false {
-		t.Errorf("Expected package %s in resultset. Not found.", p)
-	}
-}
-
-func BenchmarkPackagistDependencyResolver_SuccessSymfonyConsole(b *testing.B) {
-	p := "symfony/console"
-	for n := 0; n < b.N; n++ {
-		resolvePackages(b, p)
-	}
-}
-
-func TestPackagistDependencyResolver_ReplacedPackageNames(t *testing.T) {
-	tests := []struct {
-		packageName         string
-		replacedPackageName string
-	}{
-		{"symfony/translator", "symfony/translation"},
-		{"symfony/doctrine-bundle", "doctrine/doctrine-bundle"},
-		{"metadata/metadata", "jms/metadata"},
-		{"zendframework/zend-registry", "zf1/zend-registry"},
-	}
-
-	for _, tt := range tests {
-		if got := resolvePackages(t, tt.packageName); got[0].Package.Name != tt.replacedPackageName {
-			t.Errorf("Package %s was not replaced as expected. Expected: %s, got: %s", tt.packageName, tt.replacedPackageName, got[0].Package.Name)
 		}
 	}
 }

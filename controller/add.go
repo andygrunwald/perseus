@@ -11,7 +11,7 @@ import (
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
-	"github.com/andygrunwald/perseus/packagist"
+	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/dependency"
 )
 
@@ -60,7 +60,7 @@ func (c *AddController) Run() error {
 		if c.WithDependencies {
 			pUrl := "https://packagist.org/"
 			c.Log.Printf("Loading dependencies for package \"%s\" from %s", c.Package, pUrl)
-			packagistClient, err := packagist.New(pUrl, nil)
+			packagistClient, err := repository.NewPackagist(pUrl, nil)
 			if err != nil {
 				return err
 			}
@@ -70,7 +70,7 @@ func (c *AddController) Run() error {
 			// We set the queue length to the number of workers + 1. Why?
 			// With this every worker has work, when the queue is filled.
 			// During the add command, this is enough in most of the cases.
-			d, err := dependency.NewDependencyResolver(c.NumOfWorker, packagistClient)
+			d, err := dependency.NewComposerResolver(c.NumOfWorker, packagistClient)
 			if err != nil {
 				return err
 			}
@@ -192,12 +192,12 @@ func (c *AddController) getLocalUrlForRepository(p string) string {
 }
 
 func (c *AddController) getURLOfPackageFromPackagist(p *dependency.Package) (*dependency.Package, error) {
-	packagistClient, err := packagist.New("https://packagist.org/", nil)
+	packagistClient, err := repository.NewPackagist("https://packagist.org/", nil)
 	if err != nil {
 		return p, fmt.Errorf("Packagist client creation failed: %s", err)
 	}
 
-	packagistPackage, resp, err := packagistClient.GetPackage(p.Name)
+	packagistPackage, resp, err := packagistClient.GetPackageByName(p.Name)
 	if err != nil {
 		return p, fmt.Errorf("Failed to retrieve information about package \"%s\" from Packagist. Called %s. Error: %s", p.Name, resp.Request.URL.String(), err)
 	}

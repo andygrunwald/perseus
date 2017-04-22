@@ -11,7 +11,7 @@ import (
 
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
-	"github.com/andygrunwald/perseus/packagist"
+	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/types"
 )
@@ -52,7 +52,7 @@ func (c *MirrorController) Run() error {
 
 	// Get all required repositories and resolve those dependencies
 	pURL := "https://packagist.org/"
-	packagistClient, err := packagist.New(pURL, nil)
+	packagistClient, err := repository.NewPackagist(pURL, nil)
 	if err != nil {
 		c.Log.Println(err)
 	}
@@ -62,7 +62,7 @@ func (c *MirrorController) Run() error {
 	// We set the queue length to the number of workers + 1. Why?
 	// With this every worker has work, when the queue is filled.
 	// During the add command, this is enough in most of the cases.
-	d, err := dependency.NewDependencyResolver(c.NumOfWorker, packagistClient)
+	d, err := dependency.NewComposerResolver(c.NumOfWorker, packagistClient)
 	if err != nil {
 		return err
 	}
