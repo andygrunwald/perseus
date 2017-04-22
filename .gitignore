@@ -24,7 +24,8 @@ _testmain.go
 *.prof
 
 # Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+cover.out
+cover.html
 
 # External packages folder
 vendor/
