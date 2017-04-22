@@ -32,21 +32,6 @@ type ComposerResolver struct {
 // GetResultStream will return the channel for results.
 // During the process of resolving dependencies, this channel will be filled
 // with the results. Those can be processed next to the resolve process.
-//
-// The result channel will stream a list of results.
-// Normally we are talking about a tree here.
-// As an example for the symfony/console package:
-//
-// symfony/console
-// |- symfony/polyfill-mbstring
-// |- symfony/debug
-//    |- psr/log
-//
-// Every package has n sub dependencies.
-// The result stream will not return a true. It will return a list
-// of packages. And this algorithm is not stable.
-// Means: The order of the package can be different each time.
-// The caller code must be able to handle it.
 func (d *ComposerResolver) GetResultStream() <-chan *Result {
 	return d.results
 }
