@@ -36,7 +36,22 @@ But it has its limitations, flaws and disadvantages like:
 
 ## Installation
 
+### From binary
+
 TODO
+
+### From source
+
+To install *perseus* from source, a running [Golang installation](https://golang.org/doc/install) is required.
+
+```sh
+$ go get github.com/andygrunwald/perseus
+$ cd $GOPATH/src/github.com/andygrunwald/perseus
+$ go get ./...
+$ cd cmd/perseus/
+$ go install
+$ $GOPATH/bin/perseus
+```
 
 ## Usage
 
