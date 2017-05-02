@@ -29,3 +29,6 @@ cover.html
 
 # External packages folder
 vendor/
+
+# Application
+cmd/perseus/perseus
