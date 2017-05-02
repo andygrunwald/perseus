@@ -59,7 +59,87 @@ TODO
 
 ## Configuration
 
-TODO
+*perseus* is configured like Medusa with a JSON file.
+Here is a minimalistic example:
+
+```json
+{
+    "repositories": [
+        {
+            "name": "myvendor/package",
+            "url": "git@othervcs:myvendor/package.git"
+        },
+        ...
+    ],
+    "require": [
+        "symfony/symfony",
+        "monolog/monolog",
+        ...
+    ],
+    "repodir": "/tmp/perseus/git-mirror",
+    "satisurl": "http://php.pkg.company.tld/git-mirror",
+    "satisconfig": "./satis.json"
+}
+```
+
+In the next sections an explaination of the single configuration parts can be found.
+
+### `repositories`
+
+A list of custom packages that are not available on the configured https://packagist.org/.
+Per each repository, a name and a url must be given.
+
+### `require`
+
+A list of repositories to mirror down to disk.
+
+The packages will be searched on the given Packagist instance.
+Per default the standard instance https://packagist.org/ will be used.
+
+### `repodir`
+
+Directory to write all repositories to.
+
+This directory needs to be writable.
+
+### `satisurl`
+
+URL of the future satis installation.
+
+This URL will be used to prefix all package URLs in the final satis configuration.
+
+### `satisconfig`
+
+At the end of the run, *perseus* write a valid [satis](https://getcomposer.org/doc/articles/handling-private-packages-with-satis.md#satis) configuration file.
+In this setting a valid path to a writeable satis configuration is expected.
+Further more the file needs to be exists before and it needs to be a valid satis configuration.
+
+*preseus* itself will only touch and edit the `repositories` section in this satis configuration.
+All other parts of the file will be untouched.
+
+#### Example `satis.json`
+
+```json
+{
+    "archive": {
+        "directory": "dist",
+        "format": "tar",
+        "prefix-url": "http://php.pkg.company.tld/packages/",
+        "skip-dev": true
+    },
+    "homepage": "http://php.pkg.company.tld/packages/",
+    "name": "private php package repositories",
+    "providers": true,
+    "repositories": [
+        {
+            "type": "git",
+            "url": "http://php.pkg.company.tld/git-mirror/symfony/debug.git"
+        },
+        ...
+    ],
+    "require-all": true
+}
+```
 
 ## Drop-in replacement
 
