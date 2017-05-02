@@ -46,6 +46,16 @@ TODO
 
 TODO
 
+## Drop-in replacement
+
+We are a Drop-in replacement for [Medusa](https://github.com/instaclick/medusa).
+We have the same command structure and functionality.
+
+But in one point we are not compatible: Logging.
+We log way more information during the process as the original Medusa.
+
+Be aware: If you parse the logs of the original Medusa process, you might have to adjust your scripts.
+
 ## Development
 
 ### Unit tests
