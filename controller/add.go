@@ -3,12 +3,12 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/dependency/repository"
@@ -26,7 +26,7 @@ type AddController struct {
 	// Config is the main medusa configuration
 	Config *config.Medusa
 	// Log represents a logger to log messages
-	Log *log.Logger
+	Log logrus.FieldLogger
 	// NumOfWorker is the number of worker used for concurrent actions (like resolving the dependency tree)
 	NumOfWorker int
 }
@@ -59,7 +59,11 @@ func (c *AddController) Run() error {
 		// Check if we should load the dependency also
 		if c.WithDependencies {
 			pUrl := "https://packagist.org/"
-			c.Log.Printf("Loading dependencies for package \"%s\" from %s", c.Package, pUrl)
+			c.Log.WithFields(logrus.Fields{
+				"package": c.Package,
+				"source":  pUrl,
+			}).Info("Loading dependencies")
+
 			packagistClient, err := repository.NewPackagist(pUrl, nil)
 			if err != nil {
 				return err
@@ -85,9 +89,18 @@ func (c *AddController) Run() error {
 			}
 
 			if l := len(dependencyNames); l == 0 {
-				c.Log.Printf("%d dependencies found for package \"%s\" on %s", len(dependencyNames), c.Package, pUrl)
+				c.Log.WithFields(logrus.Fields{
+					"amount":  l,
+					"package": c.Package,
+					"source":  pUrl,
+				}).Info("No dependencies found")
 			} else {
-				c.Log.Printf("%d dependencies found for package \"%s\" on %s: %s", len(dependencyNames), c.Package, pUrl, strings.Join(dependencyNames, ", "))
+				c.Log.WithFields(logrus.Fields{
+					"amount":       l,
+					"package":      c.Package,
+					"source":       pUrl,
+					"dependencies": strings.Join(dependencyNames, ", "),
+				}).Info("Dependencies found")
 			}
 
 		} else {
@@ -101,7 +114,10 @@ func (c *AddController) Run() error {
 		}
 
 	} else {
-		c.Log.Printf("Mirroring of package \"%s\" from repository \"%s\" started", p.Name, p.Repository)
+		c.Log.WithFields(logrus.Fields{
+			"package":    p.Name,
+			"repository": p.Repository,
+		}).Info("Mirroring started")
 		downloadablePackages = append(downloadablePackages, p)
 	}
 
@@ -109,7 +125,10 @@ func (c *AddController) Run() error {
 	// Resolved the dependencies (or not) and collected the packages.
 	// I would say we can start with downloading them ....
 	// Why we are talking? Lets do it!
-	c.Log.Printf("Start concurrent download process for %d packages with %d worker", len(downloadablePackages), c.NumOfWorker)
+	c.Log.WithFields(logrus.Fields{
+		"amountPackages": len(downloadablePackages),
+		"amountWorker":   c.NumOfWorker,
+	}).Info("Start concurrent download process")
 	d, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
 	if err != nil {
 		return err
@@ -122,14 +141,20 @@ func (c *AddController) Run() error {
 		v := <-results
 		if v.Error != nil {
 			if os.IsExist(v.Error) {
-				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", v.Package.Name)
+				c.Log.WithFields(logrus.Fields{
+					"package": v.Package.Name,
+				}).Info("Package exists on disk. Try updating it instead. Skipping.")
 			} else {
-				c.Log.Printf("Error while mirroring package \"%s\": %s", v.Package.Name, v.Error)
+				c.Log.WithFields(logrus.Fields{
+					"package": v.Package.Name,
+				}).WithError(v.Error).Info("Error while mirroring package")
 				// If we have an error, we don't need to add it to satis repositories
 				continue
 			}
 		} else {
-			c.Log.Printf("Mirroring of package \"%s\" successful", v.Package.Name)
+			c.Log.WithFields(logrus.Fields{
+				"package": v.Package.Name,
+			}).Info("Mirroring of package successful")
 		}
 
 		satisRepositories = append(satisRepositories, c.getLocalUrlForRepository(v.Package.Name))
@@ -145,7 +170,7 @@ func (c *AddController) writeSatisConfig(satisRepositories ...string) error {
 	// Write Satis file
 	satisConfig := c.Config.GetString("satisconfig")
 	if len(satisConfig) == 0 {
-		c.Log.Print("No Satis configuration specified. Skipping to write a satis configuration.")
+		c.Log.Info("No Satis configuration specified. Skipping to write a satis configuration.")
 		return nil
 	}
 
@@ -170,7 +195,9 @@ func (c *AddController) writeSatisConfig(satisRepositories ...string) error {
 		return fmt.Errorf("Writing Satis configuration to %s failed: %s", satisConfig, err)
 	}
 
-	c.Log.Printf("Satis configuration successful written to %s", satisConfig)
+	c.Log.WithFields(logrus.Fields{
+		"path": satisConfig,
+	}).Info("Satis configuration successful written")
 	return nil
 }
 

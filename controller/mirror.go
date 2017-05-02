@@ -3,12 +3,12 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/dependency"
 	"github.com/andygrunwald/perseus/dependency/repository"
@@ -23,7 +23,7 @@ type MirrorController struct {
 	// Config is the main medusa configuration
 	Config *config.Medusa
 	// Log represents a logger to log messages
-	Log *log.Logger
+	Log logrus.FieldLogger
 	// NumOfWorker is the number of worker used for concurrent actions (like resolving the dependency tree)
 	NumOfWorker int
 
@@ -40,9 +40,9 @@ func (c *MirrorController) Run() error {
 	repoList, err := c.Config.GetNamesOfRepositories()
 	if err != nil {
 		if config.IsNoRepositories(err) {
-			c.Log.Printf("Config: %s", err)
+			c.Log.WithError(err).Info("Configuration")
 		} else {
-			c.Log.Println(err)
+			c.Log.WithError(err).Info("")
 		}
 	}
 
@@ -54,7 +54,7 @@ func (c *MirrorController) Run() error {
 	pURL := "https://packagist.org/"
 	packagistClient, err := repository.NewPackagist(pURL, nil)
 	if err != nil {
-		c.Log.Println(err)
+		c.Log.WithError(err).Info("")
 	}
 
 	// Lets get a dependency resolver.
@@ -88,7 +88,10 @@ func (c *MirrorController) Run() error {
 		repos.Add(p.Package)
 	}
 
-	c.Log.Printf("Start concurrent download process for %d packages with %d worker", repos.Len(), c.NumOfWorker)
+	c.Log.WithFields(logrus.Fields{
+		"amountPackages": repos.Len(),
+		"amountWorker":   c.NumOfWorker,
+	}).Info("Start concurrent download process")
 	loader, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
 	if err != nil {
 		return err
@@ -107,14 +110,20 @@ func (c *MirrorController) Run() error {
 		v := <-loaderResults
 		if v.Error != nil {
 			if os.IsExist(v.Error) {
-				c.Log.Printf("Package \"%s\" exists on disk. Try updating it instead. Skipping.", v.Package.Name)
+				c.Log.WithFields(logrus.Fields{
+					"package": v.Package.Name,
+				}).Info("Package exists on disk. Try updating it instead. Skipping.")
 			} else {
-				c.Log.Printf("Error while mirroring package \"%s\": %s", v.Package.Name, v.Error)
+				c.Log.WithFields(logrus.Fields{
+					"package": v.Package.Name,
+				}).WithError(v.Error).Info("Error while mirroring package")
 				// If we have an error, we don't need to add it to satis repositories
 				continue
 			}
 		} else {
-			c.Log.Printf("Mirroring of package \"%s\" successful", v.Package.Name)
+			c.Log.WithFields(logrus.Fields{
+				"package": v.Package.Name,
+			}).Info("Mirroring of package successful")
 		}
 
 		satisRepositories = append(satisRepositories, c.getLocalURLForRepository(v.Package.Name))
@@ -147,7 +156,7 @@ func (c *MirrorController) writeSatisConfig(satisRepositories ...string) error {
 	// Write Satis file
 	satisConfig := c.Config.GetString("satisconfig")
 	if len(satisConfig) == 0 {
-		c.Log.Print("No Satis configuration specified. Skipping to write a satis configuration.")
+		c.Log.Info("No Satis configuration specified. Skipping to write a satis configuration.")
 		return nil
 	}
 
@@ -172,6 +181,8 @@ func (c *MirrorController) writeSatisConfig(satisRepositories ...string) error {
 		return fmt.Errorf("Writing Satis configuration to %s failed: %s", satisConfig, err)
 	}
 
-	c.Log.Printf("Satis configuration successful written to %s", satisConfig)
+	c.Log.WithFields(logrus.Fields{
+		"path": satisConfig,
+	}).Info("Satis configuration successful written")
 	return nil
 }

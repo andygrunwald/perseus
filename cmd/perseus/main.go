@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/controller"
 	"github.com/spf13/cobra"
@@ -151,11 +152,16 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	}
 	packet := args[0]
 
-	// Initialize logger
-	// At the moment we run pretty standard golang logging to stderr
-	// It works for us. We might consider to change this later.
-	// If you have good reasons for this, feel free to talk to us.
-	l := log.New(os.Stderr, "", log.LstdFlags)
+	// Initialize logger with structured logging
+	l := &logrus.Logger{
+		Out: os.Stderr,
+		Formatter: &logrus.TextFormatter{
+			TimestampFormat: time.RFC3339,
+			FullTimestamp:   true,
+		},
+		Hooks: make(logrus.LevelHooks),
+		Level: logrus.InfoLevel,
+	}
 
 	// Check if we got minimum 2 arguments.
 	// We will only use the second argument here. The rest will be ignored.
@@ -168,7 +174,9 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		}
 		viper.SetConfigFile(configFileArg)
 	}
-	l.Printf("Using configuration file %s", viper.ConfigFileUsed())
+	l.WithFields(logrus.Fields{
+		"path": viper.ConfigFileUsed(),
+	}).Info("Using configuration file")
 
 	// Check "with-deps" flag
 	withDepsFlag, err := cmd.Flags().GetBool("with-deps")
@@ -193,13 +201,16 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Couldn't determine number of concurrent workers. Please control the 'numOfWorkers' flag. Error message: %s\n", err)
 	}
 
-	l.Printf("Running \"add\" command for package \"%s\"", packet)
+	l.WithFields(logrus.Fields{
+		"command": "add",
+		"package": packet,
+	}).Info("Running command for package")
 	// Setup command and run it
 	c := &controller.AddController{
 		Package:          packet,
 		WithDependencies: withDepsFlag,
 		Config:           m,
-		Log:              l,
+		Log:              logrus.FieldLogger(l),
 		NumOfWorker:      nOfWorkers,
 	}
 	err = c.Run()
@@ -212,11 +223,16 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 
 // cmdMirrorRun is the CLI interface for the "mirror" command
 func cmdMirrorRun(cmd *cobra.Command, args []string) error {
-	// Initialize logger
-	// At the moment we run pretty standard golang logging to stderr
-	// It works for us. We might consider to change this later.
-	// If you have good reasons for this, feel free to talk to us.
-	l := log.New(os.Stderr, "", log.LstdFlags)
+	// Initialize logger with structured logging
+	l := &logrus.Logger{
+		Out: os.Stderr,
+		Formatter: &logrus.TextFormatter{
+			TimestampFormat: time.RFC3339,
+			FullTimestamp:   true,
+		},
+		Hooks: make(logrus.LevelHooks),
+		Level: logrus.InfoLevel,
+	}
 
 	// Check if we got minimum 1 argument.
 	// We will only use the first argument here. The rest will be ignored.
@@ -229,7 +245,9 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 		}
 		viper.SetConfigFile(configFileArg)
 	}
-	l.Printf("Using configuration file %s", viper.ConfigFileUsed())
+	l.WithFields(logrus.Fields{
+		"path": viper.ConfigFileUsed(),
+	}).Info("Using configuration file")
 
 	// Create viper based configuration provider for Medusa
 	p, err := config.NewViperProvider(viper.GetViper())
@@ -252,7 +270,7 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	// Setup command and run it
 	c := &controller.MirrorController{
 		Config:      m,
-		Log:         l,
+		Log:         logrus.FieldLogger(l),
 		NumOfWorker: nOfWorkers,
 	}
 	err = c.Run()
@@ -265,11 +283,16 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 
 // cmdUpdateRun is the CLI interface for the "update" command
 func cmdUpdateRun(cmd *cobra.Command, args []string) error {
-	// Initialize logger
-	// At the moment we run pretty standard golang logging to stderr
-	// It works for us. We might consider to change this later.
-	// If you have good reasons for this, feel free to talk to us.
-	l := log.New(os.Stderr, "", log.LstdFlags)
+	// Initialize logger with structured logging
+	l := &logrus.Logger{
+		Out: os.Stderr,
+		Formatter: &logrus.TextFormatter{
+			TimestampFormat: time.RFC3339,
+			FullTimestamp:   true,
+		},
+		Hooks: make(logrus.LevelHooks),
+		Level: logrus.InfoLevel,
+	}
 
 	// Check if we got minimum 1 argument.
 	// We will only use the first argument here. The rest will be ignored.
@@ -282,7 +305,9 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 		}
 		viper.SetConfigFile(configFileArg)
 	}
-	l.Printf("Using configuration file %s", viper.ConfigFileUsed())
+	l.WithFields(logrus.Fields{
+		"path": viper.ConfigFileUsed(),
+	}).Info("Using configuration file")
 
 	// Create viper based configuration provider for Medusa
 	p, err := config.NewViperProvider(viper.GetViper())
@@ -305,7 +330,7 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	// Setup command and run it
 	c := &controller.UpdateController{
 		Config:      m,
-		Log:         l,
+		Log:         logrus.FieldLogger(l),
 		NumOfWorker: nOfWorkers,
 	}
 	err = c.Run()

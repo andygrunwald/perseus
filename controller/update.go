@@ -2,9 +2,9 @@ package controller
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/andygrunwald/perseus/config"
 	"github.com/andygrunwald/perseus/downloader"
 )
@@ -16,7 +16,7 @@ type UpdateController struct {
 	// Config is the main medusa configuration
 	Config *config.Medusa
 	// Log represents a logger to log messages
-	Log *log.Logger
+	Log logrus.FieldLogger
 	// NumOfWorker is the number of worker used for concurrent actions (like updating git repositories)
 	NumOfWorker int
 }
@@ -41,7 +41,9 @@ func (c *UpdateController) Run() error {
 
 	// If no repositories were found, we will exit here
 	if len(matches) == 0 {
-		c.Log.Printf("No repositories found in %s", p)
+		c.Log.WithFields(logrus.Fields{
+			"path": p,
+		}).Info("No repositories found")
 		return nil
 	}
 
@@ -63,9 +65,13 @@ func (c *UpdateController) Run() error {
 	for a := 1; a <= len(matches); a++ {
 		r := <-results
 		if r.Err != nil {
-			c.Log.Printf("Error while updating %s: %s", r.Path, r.Err)
+			c.Log.WithFields(logrus.Fields{
+				"path": r.Path,
+			}).WithError(r.Err).Info("Error while updating")
 		} else {
-			c.Log.Printf("Update of %s successful", r.Path)
+			c.Log.WithFields(logrus.Fields{
+				"path": r.Path,
+			}).Info("Update successful")
 		}
 	}
 
