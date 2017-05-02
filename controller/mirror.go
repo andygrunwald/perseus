@@ -92,7 +92,7 @@ func (c *MirrorController) Run() error {
 		"amountPackages": repos.Len(),
 		"amountWorker":   c.NumOfWorker,
 	}).Info("Start concurrent download process")
-	loader, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
+	loader, err := downloader.NewGitDownloader(c.NumOfWorker, c.Config.GetString("repodir"))
 	if err != nil {
 		return err
 	}

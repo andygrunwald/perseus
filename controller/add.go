@@ -129,7 +129,7 @@ func (c *AddController) Run() error {
 		"amountPackages": len(downloadablePackages),
 		"amountWorker":   c.NumOfWorker,
 	}).Info("Start concurrent download process")
-	d, err := downloader.NewGit(c.NumOfWorker, c.Config.GetString("repodir"))
+	d, err := downloader.NewGitDownloader(c.NumOfWorker, c.Config.GetString("repodir"))
 	if err != nil {
 		return err
 	}

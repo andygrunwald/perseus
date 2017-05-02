@@ -8,7 +8,8 @@ import (
 	"github.com/andygrunwald/perseus/dependency"
 )
 
-type GitDownloader struct {
+// Git represents an Updater and Downloader for the git protocol
+type Git struct {
 	// workerCount is the number of worker that will be started
 	workerCount int
 
@@ -27,12 +28,15 @@ type Result struct {
 	Error   error
 }
 
-func NewGit(numOfWorker int, dir string) (Downloader, error) {
+// NewGitDownloader creates a new downloader based on the git protocol.
+// numOfWorker initiates the number of workers we should spawn to work concurrent.
+// dir is the base directory where the downloads will be mirrored, too.
+func NewGitDownloader(numOfWorker int, dir string) (Downloader, error) {
 	if numOfWorker == 0 {
 		return nil, fmt.Errorf("Starting a concurrent git downloader with zero worker is not possible")
 	}
 
-	c := &GitDownloader{
+	c := &Git{
 		workerCount: numOfWorker,
 		dir:         dir,
 		queue:       make(chan *dependency.Package, (numOfWorker + 1)),
@@ -44,17 +48,18 @@ func NewGit(numOfWorker int, dir string) (Downloader, error) {
 // GetResultStream will return the results stream.
 // During the process of downloading git repositories, this channel will be filled
 // with the results.
-func (d *GitDownloader) GetResultStream() <-chan *Result {
+func (d *Git) GetResultStream() <-chan *Result {
 	return d.results
 }
 
-func (d *GitDownloader) Close() error {
+// Close will close the process
+func (d *Git) Close() error {
 	close(d.results)
 	return nil
 }
 
-// Start will kick of the dependency resolver process.
-func (d *GitDownloader) Download(packages []*dependency.Package) {
+// Download will start the concurrent download process
+func (d *Git) Download(packages []*dependency.Package) {
 	// Start the worker
 	for w := 1; w <= d.workerCount; w++ {
 		go d.worker(w, d.queue, d.results)
@@ -72,7 +77,7 @@ func (d *GitDownloader) Download(packages []*dependency.Package) {
 // id the a id per worker (only for logging/debugging purpose).
 // jobs is the jobs channel (the worker needs to be able to read the jobs).
 // results is the channel where all results will be stored once they are resolved.
-func (d *GitDownloader) worker(id int, jobs <-chan *dependency.Package, results chan<- *Result) {
+func (d *Git) worker(id int, jobs <-chan *dependency.Package, results chan<- *Result) {
 	for j := range jobs {
 		targetDir := fmt.Sprintf("%s/%s.git", d.dir, j.Name)
 
@@ -128,7 +133,7 @@ func (d *GitDownloader) worker(id int, jobs <-chan *dependency.Package, results 
 	}
 }
 
-func (d *GitDownloader) clone(repository, target string) error {
+func (d *Git) clone(repository, target string) error {
 	cmd := exec.Command("git", "clone", "--mirror", repository, target)
 	stdOut, err := cmd.Output()
 	if err != nil {
@@ -141,7 +146,7 @@ func (d *GitDownloader) clone(repository, target string) error {
 	return nil
 }
 
-func (d *GitDownloader) fsck(target string) error {
+func (d *Git) fsck(target string) error {
 	// Firing a git file system check.
 	// This was originally introduced, because on of the KDE git mirrors has problems.
 	// See https://github.com/instaclick/medusa/issues/6
@@ -158,7 +163,7 @@ func (d *GitDownloader) fsck(target string) error {
 	return nil
 }
 
-func (d *GitDownloader) updateServerInfo(target string) error {
+func (d *Git) updateServerInfo(target string) error {
 	// Lets be save and fire a update-server-info
 	// This is useful if the remote server don`t support on-the-fly pack generations.
 	// See `git help update-server-info`
@@ -176,13 +181,16 @@ func (d *GitDownloader) updateServerInfo(target string) error {
 	return nil
 }
 
+// NewGitUpdater created a new updater based on the git protocol.
+//
 // TODO Make me concurrent
 func NewGitUpdater() (Updater, error) {
-	client := &GitDownloader{}
+	client := &Git{}
 	return client, nil
 }
 
-func (d *GitDownloader) Update(target string) error {
+// Update updates target with a simple `git fetch`.
+func (d *Git) Update(target string) error {
 	err := d.fetch(target)
 	if err != nil {
 		return err
@@ -196,7 +204,7 @@ func (d *GitDownloader) Update(target string) error {
 	return nil
 }
 
-func (d *GitDownloader) fetch(target string) error {
+func (d *Git) fetch(target string) error {
 	cmd := exec.Command("git", "fetch", "--prune")
 	cmd.Dir = target
 	stdOut, err := cmd.Output()
