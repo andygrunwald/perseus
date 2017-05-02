@@ -4,10 +4,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ViperProvider represents the structure to manage
+// configurations based on github.com/spf13/viper
 type ViperProvider struct {
 	v *viper.Viper
 }
 
+// NewViperProvider creates a new configuration provider
+// based on github.com/spf13/viper
 func NewViperProvider(v *viper.Viper) (*ViperProvider, error) {
 	p := &ViperProvider{
 		v: v,
