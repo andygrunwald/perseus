@@ -55,11 +55,75 @@ $ $GOPATH/bin/perseus
 
 ## Usage
 
-TODO
+### Add a new package
+
+The `add` command will mirror the given *<Package-Name>* down to disk (with dependencies if requested) and adds the package into the configured Satis.json file.
+
+Usage:
+
+```
+perseus add <Package-Name> [Config-File]
+```
+
+Examples:
+
+```sh
+$ perseus add "twig/twig"
+$ perseus add --with-deps "symfony/console"
+$ perseus add --with-deps "guzzlehttp/guzzle" /var/config/medusa.json
+```
+
+### Mirror all repositories
+
+The `mirror` command will mirror all configured packages from `medusa.json` down to disk (incl. dependencies) and adds all packages into the configured `satis.json` file.
+
+Usage:
+
+```
+perseus mirror [Config-File]
+```
+
+Examples:
+
+```sh
+$ perseus mirror
+$ perseus mirror /var/config/medusa.json
+```
+
+### Update all mirrored repositories
+
+The `update` command will update all mirrored packages that are located at disk and update them to the latest state. To find all packages it will do a search in the path configured at `repodir`.
+
+Usage:
+
+```
+perseus update [Config-File]
+```
+
+Examples:
+
+```sh
+$ perseus update
+$ perseus update /var/config/medusa.json
+```
 
 ## Configuration
 
-*perseus* is configured like Medusa with a JSON file.
+*perseus* has two different kinds of configurations:
+
+1. Process settings (via command line flags)
+2. `medusa.json` configuration file
+
+### Command line flags
+
+Several settings can be set by command line flags:
+
+* Flag `--config`: Path to the *medusa.json* configuration (default: `medusa.json`)
+* Flag `--numOfWorkers`: Number of worker used, when a concurrent process is started (default: number of available CPUs)
+
+### `medusa.json` configuration file
+
+*Perseus* is mainly configured with a JSON file (like Medusa).
 Here is a minimalistic example:
 
 ```json
@@ -84,31 +148,31 @@ Here is a minimalistic example:
 
 In the next sections an explaination of the single configuration parts can be found.
 
-### `repositories`
+#### `repositories`
 
 A list of custom packages that are not available on the configured https://packagist.org/.
 Per each repository, a name and a url must be given.
 
-### `require`
+#### `require`
 
 A list of repositories to mirror down to disk.
 
 The packages will be searched on the given Packagist instance.
 Per default the standard instance https://packagist.org/ will be used.
 
-### `repodir`
+#### `repodir`
 
 Directory to write all repositories to.
 
 This directory needs to be writable.
 
-### `satisurl`
+#### `satisurl`
 
 URL of the future satis installation.
 
 This URL will be used to prefix all package URLs in the final satis configuration.
 
-### `satisconfig`
+#### `satisconfig`
 
 At the end of the run, *perseus* write a valid [satis](https://getcomposer.org/doc/articles/handling-private-packages-with-satis.md#satis) configuration file.
 In this setting a valid path to a writeable satis configuration is expected.
@@ -117,7 +181,7 @@ Further more the file needs to be exists before and it needs to be a valid satis
 *preseus* itself will only touch and edit the `repositories` section in this satis configuration.
 All other parts of the file will be untouched.
 
-#### Example `satis.json`
+##### Example `satis.json`
 
 ```json
 {
