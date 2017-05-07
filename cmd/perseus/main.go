@@ -47,7 +47,8 @@ When "with-deps" is given, dependencies of the package will be mirrored as well.
 Dependencies will be determined through API requests to packagist.org.
 `,
 	Example: `  perseus add "twig/twig"
-  perseus add --with-deps "symfony/console"`,
+  perseus add --with-deps "symfony/console"
+  perseus add --with-deps "guzzlehttp/guzzle" /var/config/medusa.json`,
 	ValidArgs: []string{"package", "config"},
 	RunE:      cmdAddRun,
 }
@@ -62,7 +63,8 @@ Both package lists form the configuration file (repositories and require) will b
 Dependencies will be only resolved from the packages entered in the require section.
 Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
 `,
-	Example:   "  perseus mirror",
+	Example:   `  perseus mirror
+  perseus mirror /var/config/medusa.json`,
 	ValidArgs: []string{"config"},
 	RunE:      cmdMirrorRun,
 }
@@ -81,7 +83,8 @@ Or you add the new package to the configuration and call the "mirror" command.
 
 The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
 Otherwise you would stuck with the version from the time you added the package.`,
-	Example:   "  perseus update",
+	Example:   `  perseus update
+  perseus update /var/config/medusa.json`,
 	ValidArgs: []string{"config"},
 	RunE:      cmdUpdateRun,
 }
