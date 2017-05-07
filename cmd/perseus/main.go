@@ -117,30 +117,18 @@ func init() {
 
 func main() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(-1)
 	}
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	}
-
 	viper.SetConfigName("medusa")
 	viper.AddConfigPath(".")
 
-	// Prefix env vars
-	viper.SetEnvPrefix("PERSEUS")
-	viper.AutomaticEnv()
-
-	// If a config file is found, read it in.
-	// If an error happen, quit.
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Configuration file is missing and required.")
-		fmt.Println("Please checkout https://github.com/andygrunwald/perseus#configuration for further details.")
-		os.Exit(1)
+	// Check and read command line parameter "--config"
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
 	}
 }
 
@@ -170,10 +158,18 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 2 {
 		configFileArg := args[1]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but don't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
+
+	// If a config file is found, read it in.
+	// If an error happen, quit.
+	if err := viper.ReadInConfig(); err != nil {
+		s := fmt.Errorf("Error while reading the configuration file \"%s\": %s\nPlease checkout https://github.com/andygrunwald/perseus#configuration for further details.", viper.ConfigFileUsed(), err)
+		return s
+	}
+
 	l.WithFields(logrus.Fields{
 		"path": viper.ConfigFileUsed(),
 	}).Info("Using configuration file")
@@ -241,10 +237,18 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 1 {
 		configFileArg := args[0]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but don't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
+
+	// If a config file is found, read it in.
+	// If an error happen, quit.
+	if err := viper.ReadInConfig(); err != nil {
+		s := fmt.Errorf("Error while reading the configuration file \"%s\": %s\nPlease checkout https://github.com/andygrunwald/perseus#configuration for further details.", viper.ConfigFileUsed(), err)
+		return s
+	}
+
 	l.WithFields(logrus.Fields{
 		"path": viper.ConfigFileUsed(),
 	}).Info("Using configuration file")
@@ -301,10 +305,18 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 1 {
 		configFileArg := args[0]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but don't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
+
+	// If a config file is found, read it in.
+	// If an error happen, quit.
+	if err := viper.ReadInConfig(); err != nil {
+		s := fmt.Errorf("Error while reading the configuration file \"%s\": %s\nPlease checkout https://github.com/andygrunwald/perseus#configuration for further details.", viper.ConfigFileUsed(), err)
+		return s
+	}
+
 	l.WithFields(logrus.Fields{
 		"path": viper.ConfigFileUsed(),
 	}).Info("Using configuration file")
