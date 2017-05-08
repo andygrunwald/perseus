@@ -71,8 +71,7 @@ To install *perseus* from source, a running [Golang installation](https://golang
 $ go get github.com/andygrunwald/perseus
 $ cd $GOPATH/src/github.com/andygrunwald/perseus
 $ go get ./...
-$ cd cmd/perseus/
-$ go install
+$ make install
 $ $GOPATH/bin/perseus
 ```
 
@@ -239,6 +238,16 @@ We log way more information during the process as the original Medusa.
 Be aware: If you parse the logs of the original Medusa process, you might have to adjust your scripts.
 
 ## Development
+
+### Build
+
+To build the application, fire
+
+```sh
+$ make build
+```
+
+A binary, called `perseus` should appear in the same directory.
 
 ### Unit tests
 
