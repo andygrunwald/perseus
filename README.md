@@ -40,6 +40,29 @@ But it has its limitations, flaws and disadvantages like:
 
 TODO
 
+### From docker image
+
+*perseus* is available as Docker image at [andygrunwald/perseus](https://hub.docker.com/r/andygrunwald/perseus/). To download the image, fire:
+
+```sh
+$ docker pull andygrunwald/perseus
+```
+
+Commands can be executed like a normal installation in the format:
+
+```sh
+$ docker run andygrunwald/perseus <Command-Name> [Flags] <Parameter>
+```
+
+E.g. the `add` command:
+
+```sh
+$ docker run andygrunwald/perseus add --with-deps symfony/console /var/config/medusa-small.json
+```
+
+Inside the container, example *medusa* and *satis* configurations from the [.docker](./.docker/) folder are available in the path `/var/config`.
+Those can be used to play around.
+
 ### From source
 
 To install *perseus* from source, a running [Golang installation](https://golang.org/doc/install) is required.
@@ -61,8 +84,8 @@ The `add` command will mirror the given *<Package-Name>* down to disk (with depe
 
 Usage:
 
-```
-perseus add <Package-Name> [Config-File]
+```sh
+$ perseus add <Package-Name> [Config-File]
 ```
 
 Examples:
@@ -79,8 +102,8 @@ The `mirror` command will mirror all configured packages from `medusa.json` down
 
 Usage:
 
-```
-perseus mirror [Config-File]
+```sh
+$ perseus mirror [Config-File]
 ```
 
 Examples:
@@ -96,8 +119,8 @@ The `update` command will update all mirrored packages that are located at disk 
 
 Usage:
 
-```
-perseus update [Config-File]
+```sh
+$ perseus update [Config-File]
 ```
 
 Examples:
@@ -222,11 +245,19 @@ Be aware: If you parse the logs of the original Medusa process, you might have t
 A running go installation is required to execute unit tests.
 To execute them, run:
 
-```
+```sh
 $ make test
 ```
 
 Tip: If you plan to contribute via a Pull Request, the use of unit tests is encouraged.
+
+### Build the docker image
+
+To build the docker image on your own machine, fire
+
+```sh
+$ docker build -t andygrunwald/perseus .
+```
 
 ## Project background
 
