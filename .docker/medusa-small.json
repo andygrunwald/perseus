@@ -1,0 +1,9 @@
+{
+    "repositories": [],
+    "require": [
+        "symfony/symfony"
+    ],
+    "repodir": "/tmp/perseus/git-mirror",
+    "satisurl": "http://php.pkg.company.tld/git-mirror/",
+    "satisconfig": "satis.json"
+}

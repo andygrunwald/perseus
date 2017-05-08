@@ -1,0 +1,13 @@
+{
+    "archive": {
+        "directory": "dist",
+        "format": "tar",
+        "prefix-url": "http://php.pkg.company.tld/packages/",
+        "skip-dev": true
+    },
+    "homepage": "http://php.pkg.company.tld/packages/",
+    "name": "private php package repositories",
+    "providers": true,
+    "repositories": [],
+    "require-all": true
+}
