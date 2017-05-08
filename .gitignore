@@ -32,3 +32,6 @@ vendor/
 
 # Application
 cmd/perseus/perseus
+
+# Application release
+dist/
