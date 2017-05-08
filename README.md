@@ -268,6 +268,34 @@ To build the docker image on your own machine, fire
 $ docker build -t andygrunwald/perseus .
 ```
 
+### Release a new version
+
+We use [goreleaser](https://github.com/goreleaser/goreleaser) to build and ship our releases. Further more we follow [semantic versioning](http://semver.org/).
+Here is how you create and ship a ner version:
+
+1. Export a `GITHUB_TOKEN` environment variable with the `repo` scope selected. This will be used to deploy releases to your GitHub repository. Create yours [here](https://github.com/settings/tokens/new).
+
+	```sh
+	$ export GITHUB_TOKEN=`YOUR_TOKEN`
+	```
+
+2. GoReleaser uses the latest [Git tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) of your repository.
+Create a tag:
+
+	```console
+	$ git tag -a v0.1.0 -m "First release"
+	```
+
+	If you don't want to create a tag yet but instead simply create a package based on the latest commit, then you can also use the `--snapshot` flag.
+
+3. Now you can run GoReleaser at the root of your repository:
+
+	```sh
+	$ goreleaser
+	```
+
+4. That's it! Check your GitHub project's release page.
+
 ## Project background
 
 ### The name "*perseus*"
