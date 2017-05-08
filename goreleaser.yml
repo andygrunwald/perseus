@@ -16,8 +16,8 @@ build:
     - arm64
   goarm:
     - "6"
-  main: cmd/perseus/main.go
-  ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  main: cmd/perseus
+  ldflags: -s -w -X main.Version={{.Version}} -X main.CommitHash={{.Commit}} -X main.BuildDate={{.Date}}
   binary: perseus
 archive:
   format: tar.gz
