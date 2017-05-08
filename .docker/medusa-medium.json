@@ -144,5 +144,5 @@
     ],
     "repodir": "/tmp/perseus/git-mirror",
     "satisurl": "http://php.pkg.company.tld/git-mirror/",
-    "satisconfig": "satis.json"
+    "satisconfig": "/var/config/satis.json"
 }
