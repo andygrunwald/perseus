@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -13,11 +14,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// cfgFile contains the path and name of the configuration file.
-var cfgFile string
+var (
+	// CommitHash contains the current Git revision.
+	// Use make to build to make sure this gets set.
+	CommitHash string
 
-// numOfWorkers reflects the number of workers used for concurrent processes
-var numOfWorkers int
+	// BuildDate contains the date of the current build.
+	BuildDate string
+
+	// Version contains the current version.
+	// Use make to build to make sure this gets set.
+	Version string
+
+	// cfgFile contains the path and name of the configuration file.
+	cfgFile string
+
+	// numOfWorkers reflects the number of workers used for concurrent processes
+	numOfWorkers int
+)
 
 // RootCmd represents the base command when called without any subcommands.
 var RootCmd = &cobra.Command{
@@ -53,6 +67,10 @@ func init() {
 	// Original medusa command
 	// 	medusa update [config]
 	RootCmd.AddCommand(updateCmd)
+
+	// Custom perseus command
+	// 	perseus version
+	RootCmd.AddCommand(versionCmd)
 
 	// Cobra is only able to define flags, but no arguments
 	// If we were able to define arguments we would implement those:
@@ -194,7 +212,7 @@ Both package lists form the configuration file (repositories and require) will b
 Dependencies will be only resolved from the packages entered in the require section.
 Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
 `,
-	Example:   `  perseus mirror
+	Example: `  perseus mirror
   perseus mirror /var/config/medusa.json`,
 	ValidArgs: []string{"config"},
 	RunE:      cmdMirrorRun,
@@ -282,7 +300,7 @@ Or you add the new package to the configuration and call the "mirror" command.
 
 The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
 Otherwise you would stuck with the version from the time you added the package.`,
-	Example:   `  perseus update
+	Example: `  perseus update
   perseus update /var/config/medusa.json`,
 	ValidArgs: []string{"config"},
 	RunE:      cmdUpdateRun,
@@ -353,5 +371,25 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error during execution of \"update\" command: %s\n", err)
 	}
 
+	return nil
+}
+
+// versionCmd represents the "version" command for the CLI interface.
+var versionCmd = &cobra.Command{
+	Use:     "version",
+	Short:   "Print the version number of perseus",
+	Long:    `All software has versions. This is perseus'.`,
+	Example: `  perseus version`,
+	RunE:    cmdVersionRun,
+}
+
+// cmdVersionRun is the CLI interface for the "version" command
+func cmdVersionRun(cmd *cobra.Command, args []string) error {
+	if len(Version) == 0 {
+		Version = "Development"
+	} else {
+		Version = strings.Title(Version)
+	}
+	fmt.Printf("perseus v%s-%s %s/%s BuildDate: %s\n", Version, strings.ToUpper(CommitHash), runtime.GOOS, runtime.GOARCH, BuildDate)
 	return nil
 }
