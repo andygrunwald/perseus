@@ -35,7 +35,7 @@ archive:
     openbsd: OpenBSD
     windows: Windows
   files:
-  - LICENSE
-  - README.md
+    - LICENSE
+    - README.md
 snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
+  name_template: SNAPSHOT
