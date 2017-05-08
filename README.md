@@ -10,6 +10,31 @@ Local git mirror for your PHP ([composer](https://getcomposer.org/)) project dep
 
 *perseus* is a successor out of and drop-in replacement for [Medusa](https://github.com/instaclick/medusa).
 
+## Table of contents
+
+- [Whats wrong with Medusa?](#)
+- [Features](#)
+- [Installation](#)
+	- [From binary]()
+	- [From docker image]()
+	- [From source]()
+- [Usage](#release-customization)
+	- [Add a new package]()
+	- [Mirror all packages]()
+	- [Update all mirrored packages]()
+- [Configuration](#)
+	- [Command line flags]()
+	- [`medusa.json` configuration file]()
+- [Drop-in replacement]()
+- [Development]()
+	- [Build]()
+	- [Build the docker image]()
+	- [Unit tests]()
+	- [Release a new version]()
+- [Project background]()
+	- [The name "*perseus*"]()
+- [Credits]()
+
 ## Whats wrong with Medusa?
 
 Nothing. Really.
@@ -95,7 +120,7 @@ $ perseus add --with-deps "symfony/console"
 $ perseus add --with-deps "guzzlehttp/guzzle" /var/config/medusa.json
 ```
 
-### Mirror all repositories
+### Mirror all packages
 
 The `mirror` command will mirror all configured packages from `medusa.json` down to disk (incl. dependencies) and adds all packages into the configured `satis.json` file.
 
@@ -112,7 +137,7 @@ $ perseus mirror
 $ perseus mirror /var/config/medusa.json
 ```
 
-### Update all mirrored repositories
+### Update all mirrored packages
 
 The `update` command will update all mirrored packages that are located at disk and update them to the latest state. To find all packages it will do a search in the path configured at `repodir`.
 
@@ -249,6 +274,14 @@ $ make build
 
 A binary, called `perseus` should appear in the same directory.
 
+### Build the docker image
+
+To build the docker image on your own machine, fire
+
+```sh
+$ docker build -t andygrunwald/perseus .
+```
+
 ### Unit tests
 
 A running go installation is required to execute unit tests.
@@ -259,14 +292,6 @@ $ make test
 ```
 
 Tip: If you plan to contribute via a Pull Request, the use of unit tests is encouraged.
-
-### Build the docker image
-
-To build the docker image on your own machine, fire
-
-```sh
-$ docker build -t andygrunwald/perseus .
-```
 
 ### Release a new version
 
