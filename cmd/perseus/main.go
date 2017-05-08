@@ -161,7 +161,7 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 2 {
 		configFileArg := args[1]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
@@ -240,7 +240,7 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 1 {
 		configFileArg := args[0]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
@@ -308,7 +308,7 @@ func cmdUpdateRun(cmd *cobra.Command, args []string) error {
 	if len(args) >= 1 {
 		configFileArg := args[0]
 		if _, err := os.Stat(configFileArg); os.IsNotExist(err) {
-			return fmt.Errorf("Configuration file %s applied as a configuration file, but doesn't exists", configFileArg)
+			return fmt.Errorf("Configuration file %s applied, but doesn't exists", configFileArg)
 		}
 		viper.SetConfigFile(configFileArg)
 	}
