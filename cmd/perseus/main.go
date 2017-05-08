@@ -34,61 +34,6 @@ perseus will create a mirror of all your project dependencies and lets you fetch
 Each dependency is entirely mirrored, meaning you'll have all versions, tags, and branches on your local machine or server.`,
 }
 
-// addCmd represents the "add" command for the CLI interface.
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Mirrors one given package and adds it to Satis",
-	Long: `Mirrors one given package and adds it to Satis.
-
-If the package is available in the medusa.json configuration file and contains a URL, the URL from the configuration file will be used.
-Otherwise perseus will request the URL from packagist.
-
-When "with-deps" is given, dependencies of the package will be mirrored as well.
-Dependencies will be determined through API requests to packagist.org.
-`,
-	Example: `  perseus add "twig/twig"
-  perseus add --with-deps "symfony/console"
-  perseus add --with-deps "guzzlehttp/guzzle" /var/config/medusa.json`,
-	ValidArgs: []string{"package", "config"},
-	RunE:      cmdAddRun,
-}
-
-// mirrorCmd represents the "mirror" command for the CLI interface.
-var mirrorCmd = &cobra.Command{
-	Use:   "mirror",
-	Short: "Mirrors all repositories that are specified in the configuration file",
-	Long: `The mirror command reads the given configuration file and mirrors the git repository for each package (including dependencies), so they can be used locally.
-
-Both package lists form the configuration file (repositories and require) will be taken into account.
-Dependencies will be only resolved from the packages entered in the require section.
-Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
-`,
-	Example:   `  perseus mirror
-  perseus mirror /var/config/medusa.json`,
-	ValidArgs: []string{"config"},
-	RunE:      cmdMirrorRun,
-}
-
-// updateCmd represents the "update" command for the CLI interface.
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Fetch latest updates for each mirrored package",
-	Long: `The update command reads the given configuration file file and updates each mirrored package.
-
-This command will not reflect the configured repositories from the configuration.
-It will only reflect the packages that were already mirrored in the past.
-
-If you add a new package to the configuration you need either call the "add" command with the package as an argument.
-Or you add the new package to the configuration and call the "mirror" command.
-
-The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
-Otherwise you would stuck with the version from the time you added the package.`,
-	Example:   `  perseus update
-  perseus update /var/config/medusa.json`,
-	ValidArgs: []string{"config"},
-	RunE:      cmdUpdateRun,
-}
-
 // init kicks of cobra (our CLI interface) and defines all global flags that can be used across all commands.
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -133,6 +78,25 @@ func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	}
+}
+
+// addCmd represents the "add" command for the CLI interface.
+var addCmd = &cobra.Command{
+	Use:   "add",
+	Short: "Mirrors one given package and adds it to Satis",
+	Long: `Mirrors one given package and adds it to Satis.
+
+If the package is available in the medusa.json configuration file and contains a URL, the URL from the configuration file will be used.
+Otherwise perseus will request the URL from packagist.
+
+When "with-deps" is given, dependencies of the package will be mirrored as well.
+Dependencies will be determined through API requests to packagist.org.
+`,
+	Example: `  perseus add "twig/twig"
+  perseus add --with-deps "symfony/console"
+  perseus add --with-deps "guzzlehttp/guzzle" /var/config/medusa.json`,
+	ValidArgs: []string{"package", "config"},
+	RunE:      cmdAddRun,
 }
 
 // cmdAddRun is the CLI interface for the "add" command
@@ -220,6 +184,22 @@ func cmdAddRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// mirrorCmd represents the "mirror" command for the CLI interface.
+var mirrorCmd = &cobra.Command{
+	Use:   "mirror",
+	Short: "Mirrors all repositories that are specified in the configuration file",
+	Long: `The mirror command reads the given configuration file and mirrors the git repository for each package (including dependencies), so they can be used locally.
+
+Both package lists form the configuration file (repositories and require) will be taken into account.
+Dependencies will be only resolved from the packages entered in the require section.
+Repositories entered in the repositories section will be mirrors as is without resolving the dependencies.
+`,
+	Example:   `  perseus mirror
+  perseus mirror /var/config/medusa.json`,
+	ValidArgs: []string{"config"},
+	RunE:      cmdMirrorRun,
+}
+
 // cmdMirrorRun is the CLI interface for the "mirror" command
 func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	// Initialize logger with structured logging
@@ -286,6 +266,26 @@ func cmdMirrorRun(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// updateCmd represents the "update" command for the CLI interface.
+var updateCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Fetch latest updates for each mirrored package",
+	Long: `The update command reads the given configuration file file and updates each mirrored package.
+
+This command will not reflect the configured repositories from the configuration.
+It will only reflect the packages that were already mirrored in the past.
+
+If you add a new package to the configuration you need either call the "add" command with the package as an argument.
+Or you add the new package to the configuration and call the "mirror" command.
+
+The update command is useful to ensure that every branch, tag or change in the configured packages is mirrors downstream.
+Otherwise you would stuck with the version from the time you added the package.`,
+	Example:   `  perseus update
+  perseus update /var/config/medusa.json`,
+	ValidArgs: []string{"config"},
+	RunE:      cmdUpdateRun,
 }
 
 // cmdUpdateRun is the CLI interface for the "update" command
