@@ -1,0 +1,41 @@
+release:
+  draft: true
+  github:
+    owner: andygrunwald
+    name: perseus
+build:
+  goos:
+    - darwin
+    - linux
+    - windows
+    - freebsd
+  goarch:
+    - amd64
+    - 386
+    - arm
+    - arm64
+  goarm:
+    - "6"
+  main: cmd/perseus/main.go
+  ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  binary: perseus
+archive:
+  format: tar.gz
+  format_overrides:
+    - goos: windows
+      format: zip
+  name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+  replacements:
+    "386": i386
+    amd64: x86_64
+    darwin: Darwin
+    freebsd: FreeBSD
+    linux: Linux
+    netbsd: NetBSD
+    openbsd: OpenBSD
+    windows: Windows
+  files:
+  - LICENSE
+  - README.md
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
