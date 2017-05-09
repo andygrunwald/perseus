@@ -63,7 +63,13 @@ But it has its limitations, flaws and disadvantages like:
 
 ### From binary
 
-TODO
+We offer pre-compiled binaries of *perseus* for easy usage.
+
+1. Checkout our [Releases page](https://github.com/andygrunwald/perseus/releases) and choose the latest release
+2. Select your system architecture and operating system of your choice
+3. Download and extract the archive
+4. Switch to the extracted directory and fire a `perseus version`
+5. Have fun
 
 ### From docker image
 
