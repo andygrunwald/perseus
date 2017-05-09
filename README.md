@@ -22,6 +22,7 @@ Local git mirror for your PHP ([composer](https://getcomposer.org/)) project dep
 	- [Add a new package](#add-a-new-package)
 	- [Mirror all packages](#mirror-all-packages)
 	- [Update all mirrored packages](#update-all-mirrored-packages)
+	- [Show me the version of perseus](#show-me-the-version-of-perseus)
 - [Configuration](#configuration)
 	- [Command line flags](#command-line-flags)
 	- [`medusa.json` configuration file](#medusajson-configuration-file)
@@ -158,6 +159,23 @@ Examples:
 ```sh
 $ perseus update
 $ perseus update /var/config/medusa.json
+```
+
+### Show me the version of perseus
+
+Print the version number incl. build details of perseus.
+
+Usage:
+
+```sh
+$ perseus version
+```
+
+Examples:
+
+```sh
+$ perseus version
+perseus v0.1.0-Alpha-4C8098CE24FA56AC7DFD512EA756F95AD9D941EB darwin/amd64 BuildDate: 2017-05-09T16:35:17Z
 ```
 
 ## Configuration
