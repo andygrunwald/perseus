@@ -44,7 +44,7 @@ here
 ## Your Environment
 
 <!--- Include as many relevant details about the environment you experienced the problem in -->
-* Version used (`perses version`):
+* Version used (`perseus version`):
 * Operating System and version:
 * Medusa configuration:
 * Satis configuration:
