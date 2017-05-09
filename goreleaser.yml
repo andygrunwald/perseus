@@ -26,14 +26,17 @@ archive:
       format: zip
   name_template: '{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
   replacements:
-    "386": i386
-    amd64: x86_64
-    darwin: Darwin
+    amd64: 64bit
+    386: 32bit
+    darwin: macOS
     freebsd: FreeBSD
     linux: Linux
     netbsd: NetBSD
     openbsd: OpenBSD
+    dragonfly: DragonFlyBSD
     windows: Windows
+    arm: ARM
+    arm64: ARM64
   files:
     - LICENSE
     - README.md
