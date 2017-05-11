@@ -81,7 +81,7 @@ func (c *MirrorController) Run() error {
 	// Finally we collect all the results of the work.
 	for p := range results {
 		if p.Error != nil {
-			c.Log.Println(p.Error)
+			c.Log.WithError(p.Error)
 			continue
 		}
 
