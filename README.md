@@ -27,6 +27,7 @@ Local git mirror for your PHP ([composer](https://getcomposer.org/)) project dep
 	- [Command line flags](#command-line-flags)
 	- [`medusa.json` configuration file](#medusajson-configuration-file)
 - [Drop-in replacement](#drop-in-replacement)
+- [Benchmark](#benchmark)
 - [Development](#development)
 	- [Build](#build)
 	- [Build the docker image](#build-the-docker-image)
@@ -285,6 +286,12 @@ But in one point we are not compatible: Logging.
 We log way more information during the process as the original Medusa.
 
 Be aware: If you parse the logs of the original Medusa process, you might have to adjust your scripts.
+
+## Benchmark
+
+We created a benchmark to compare *perseus* and [Medusa](https://github.com/instaclick/medusa).
+We documented everything in detail in [BENCHMARK.md](./BENCHMARK.md).
+Check it out!
 
 ## Development
 
