@@ -70,7 +70,7 @@ func (d *ComposerResolver) startWorker() {
 // id is a unique number assigned per worker (only for logging/debugging purpose).
 // jobs is the jobs channel. The worker needs to be able to add more jobs to the queue as well.
 // results is the channel where all results will be stored once they are resolved.
-func (d *ComposerResolver) worker(id int, jobs chan<- *Package, results chan<- *Result) {
+func (d *ComposerResolver) worker(id int, queue chan<- *Package, results chan<- *Result) {
 	// Worker has started. Lets do the hard work. Gimme the jobs.
 	for j := range d.queue {
 		packageName := j.Name
@@ -143,7 +143,7 @@ func (d *ComposerResolver) worker(id int, jobs chan<- *Package, results chan<- *
 					// with the same waitgroup.
 					d.waitGroup.Add(2)
 					go func() {
-						jobs <- packageToResolve
+						queue <- packageToResolve
 						d.waitGroup.Done()
 					}()
 				}
