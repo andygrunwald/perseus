@@ -81,7 +81,10 @@ func (c *MirrorController) Run() error {
 	// Finally we collect all the results of the work.
 	for p := range results {
 		if p.Error != nil {
-			c.Log.WithError(p.Error)
+			c.Log.WithFields(logrus.Fields{
+				"package": p.Package.Name,
+				"responseCode": p.Response.StatusCode,
+			}).WithError(p.Error).Info("Error while resolving dependencies of package")
 			continue
 		}
 
