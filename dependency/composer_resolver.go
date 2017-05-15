@@ -54,6 +54,7 @@ func (d *ComposerResolver) Resolve(packageList []*Package) {
 // QueuePackage adds package p to the queue
 func (d *ComposerResolver) queuePackage(p *Package) {
 	d.waitGroup.Add(1)
+	d.markAsQueued(p.Name)
 	d.queue <- p
 }
 
