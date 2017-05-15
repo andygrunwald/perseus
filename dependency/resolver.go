@@ -3,6 +3,7 @@ package dependency
 import (
 	"fmt"
 	"sync"
+	"net/http"
 
 	"github.com/andygrunwald/perseus/dependency/repository"
 	"github.com/andygrunwald/perseus/types/set"
@@ -17,6 +18,7 @@ type Resolver interface {
 // Result reflects a result of a dependency resolver process.
 type Result struct {
 	Package *Package
+	Response *http.Response
 	Error   error
 }
 

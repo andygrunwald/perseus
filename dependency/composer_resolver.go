@@ -95,6 +95,7 @@ func (d *ComposerResolver) worker(id int, queue chan<- *Package, results chan<- 
 			// API Call error here. Request to Packagist failed
 			r := &Result{
 				Package: j,
+				Response: resp,
 				Error:   fmt.Errorf("API returned status code %d: %s", resp.StatusCode, err),
 			}
 			results <- r
@@ -108,6 +109,7 @@ func (d *ComposerResolver) worker(id int, queue chan<- *Package, results chan<- 
 			// API Call error here. No package received from Packagist
 			r := &Result{
 				Package: j,
+				Response: resp,
 				Error:   fmt.Errorf("API Call to Packagist successful (Status code %d), but no package received", resp.StatusCode),
 			}
 			results <- r
@@ -154,6 +156,7 @@ func (d *ComposerResolver) worker(id int, queue chan<- *Package, results chan<- 
 		resolvedPackage, err := NewPackage(p.Name, p.Repository)
 		r := &Result{
 			Package: resolvedPackage,
+			Response: resp,
 			Error:   err,
 		}
 		results <- r
