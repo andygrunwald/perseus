@@ -216,7 +216,7 @@ func (d *ComposerResolver) isPackageAlreadyQueued(p string) bool {
 // Examples: php, ext-curl
 func (d *ComposerResolver) isSystemPackage(p string) bool {
 	// If the package name don't contain a "/" we will skip it here.
-	// In a composer.json in the require / require-dev part you normally add packaged
+	// In a composer.json in the require / require-dev part you normally add packages
 	// you depend on. A package name follows the format "vendor/package".
 	// E.g. symfony/console
 	// You can put other dependencies in here as well like `php` or `ext-zip`.
