@@ -81,7 +81,7 @@ func NewPackagist(instance string, httpClient *http.Client) (*PackagistClient, e
 
 // GetPackageByName returns a package by a given name
 func (c *PackagistClient) GetPackageByName(name string) (*PackagistPackage, *http.Response, error) {
-	u := fmt.Sprintf("%s/packages%s.json", c.url.String(), filepath.Clean("/"+name))
+	u := fmt.Sprintf("%s/packages%s.json", c.url.String(), strings.Replace(filepath.Clean("/"+name), "\\", "/", -1))
 	resp, err := c.httpClient.Get(u)
 	if err != nil {
 		return nil, resp, err
